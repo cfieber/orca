@@ -32,7 +32,6 @@ import java.time.Clock
 import java.time.Duration
 import java.util.concurrent.ThreadPoolExecutor
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.netflix.spectator.api.ValueFunction
 import com.netflix.spinnaker.orca.batch.StageStatusPropagationListener
 import com.netflix.spinnaker.orca.batch.StageTaskPropagationListener
 import com.netflix.spinnaker.orca.batch.TaskTaskletAdapter
@@ -62,6 +61,9 @@ import org.springframework.core.task.TaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import rx.Scheduler
 import rx.schedulers.Schedulers
+
+import java.util.function.ToDoubleFunction
+
 import static java.time.temporal.ChronoUnit.MINUTES
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE
 
@@ -228,15 +230,15 @@ class OrcaConfiguration {
   public static ThreadPoolTaskExecutor applyThreadPoolMetrics(Registry registry,
                                                           ThreadPoolTaskExecutor executor,
                                                           String threadPoolName) {
-    def createGuage = { String name, Closure valueCallback ->
+    def createGuage = { String name, Closure<Double> valueCallback ->
       def id = registry
         .createId("threadpool.${name}" as String)
         .withTag("id", threadPoolName)
 
-      registry.gauge(id, executor, new ValueFunction() {
+      registry.gauge(id, executor, new ToDoubleFunction<ThreadPoolTaskExecutor>() {
         @Override
-        double apply(Object ref) {
-          valueCallback(((ThreadPoolTaskExecutor) ref).threadPoolExecutor)
+        double applyAsDouble(ThreadPoolTaskExecutor value) {
+          return valueCallback(value.threadPoolExecutor)
         }
       })
     }

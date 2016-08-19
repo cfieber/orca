@@ -21,7 +21,7 @@ buildscript {
   }
   dependencies {
     classpath "com.netflix.spinnaker.gradle:spinnaker-gradle-project:3.5.0"
-    classpath "org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE"
+    classpath "org.springframework.boot:spring-boot-gradle-plugin:1.2.8.RELEASE"
   }
 }
 
@@ -30,9 +30,20 @@ allprojects {
   apply plugin: 'groovy'
   group = "com.netflix.spinnaker.orca"
 
-  spinnaker {
-    dependenciesVersion = "0.42.0"
+  ext {
+    spinnakerDependenciesVersion = "0.48.0-dev.1+dep.update.4c2f2da"
   }
+
+  if (spinnakerDependenciesVersion.indexOf('-dev') != -1) {
+    repositories {
+      mavenLocal()
+    }
+  }
+
+  spinnaker {
+    dependenciesVersion = spinnakerDependenciesVersion
+  }
+
   test {
     testLogging {
       exceptionFormat = 'full'
