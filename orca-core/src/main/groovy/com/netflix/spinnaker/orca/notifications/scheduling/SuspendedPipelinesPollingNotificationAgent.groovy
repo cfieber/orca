@@ -26,7 +26,6 @@ import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.client.Client
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import rx.Observable
@@ -40,8 +39,8 @@ class SuspendedPipelinesPollingNotificationAgent extends AbstractPollingNotifica
   static final String NOTIFICATION_TYPE = "suspendedPipeline"
   final String notificationType = NOTIFICATION_TYPE
 
-  @Value('${pollers.suspendedPipelines.intervalMs:120000}')
-  long pollingIntervalMs
+  @Autowired
+  SuspendedPipelinesConfigurationProperties suspendedPipelinesConfigurationProperties
 
   @Autowired
   ExecutionRepository executionRepository
@@ -53,7 +52,7 @@ class SuspendedPipelinesPollingNotificationAgent extends AbstractPollingNotifica
 
   @Override
   long getPollingInterval() {
-    return pollingIntervalMs / 1000
+    return suspendedPipelinesConfigurationProperties.intervalMs / 1000
   }
 
   @Override

@@ -17,7 +17,9 @@
 package com.netflix.spinnaker.orca.pipeline
 
 import groovy.transform.Canonical
+import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
+import org.springframework.beans.factory.annotation.Autowired
 
 import java.util.concurrent.TimeUnit
 import groovy.transform.CompileStatic
@@ -28,7 +30,6 @@ import com.netflix.spinnaker.orca.RetryableTask
 import com.netflix.spinnaker.orca.TaskResult
 import com.netflix.spinnaker.orca.pipeline.model.Execution
 import com.netflix.spinnaker.orca.pipeline.model.Stage
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import static java.util.Calendar.*
 
@@ -50,7 +51,8 @@ class RestrictExecutionDuringTimeWindow implements StageDefinitionBuilder {
 
   @Component
   @VisibleForTesting
-  private static class SuspendExecutionDuringTimeWindowTask implements RetryableTask {
+  @PackageScope
+  static class SuspendExecutionDuringTimeWindowTask implements RetryableTask {
     long backoffPeriod = TimeUnit.MINUTES.toMillis(2)
     long timeout = TimeUnit.DAYS.toMillis(2)
 
@@ -59,8 +61,8 @@ class RestrictExecutionDuringTimeWindow implements StageDefinitionBuilder {
     private static final int DAY_END_HOUR = 23
     private static final int DAY_END_MIN = 59
 
-    @Value('${tasks.executionWindow.timezone:America/Los_Angeles}')
-    String timeZoneId
+    @Autowired
+    RestrictExecutionWindowConfigurationProperties restrictExecutionWindowConfigurationProperties
 
     @Override
     TaskResult execute(Stage stage) {
@@ -137,17 +139,19 @@ class RestrictExecutionDuringTimeWindow implements StageDefinitionBuilder {
     }
 
     @VisibleForTesting
-    private Date calculateScheduledTime(Date scheduledTime, List<TimeWindow> whitelistWindows, List<Integer> whitelistDays) throws IncorrectTimeWindowsException {
+    @PackageScope
+    Date calculateScheduledTime(Date scheduledTime, List<TimeWindow> whitelistWindows, List<Integer> whitelistDays) throws IncorrectTimeWindowsException {
       return calculateScheduledTime(scheduledTime, whitelistWindows, whitelistDays, false)
     }
 
-    private Date calculateScheduledTime(Date scheduledTime, List<TimeWindow> whitelistWindows, List<Integer> whitelistDays, boolean dayIncremented) throws IncorrectTimeWindowsException {
+    @PackageScope
+    Date calculateScheduledTime(Date scheduledTime, List<TimeWindow> whitelistWindows, List<Integer> whitelistDays, boolean dayIncremented) throws IncorrectTimeWindowsException {
 
       boolean inWindow = false
       Collections.sort(whitelistWindows)
       List<TimeWindow> normalized = normalizeTimeWindows(whitelistWindows)
       Calendar calendar = Calendar.instance
-      calendar.setTimeZone(TimeZone.getTimeZone(timeZoneId))
+      calendar.setTimeZone(TimeZone.getTimeZone(restrictExecutionWindowConfigurationProperties.timezone))
       calendar.setTime(scheduledTime)
       boolean todayIsValid = true
 

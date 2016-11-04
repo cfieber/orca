@@ -25,7 +25,6 @@ import com.netflix.spinnaker.orca.igor.BuildService
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Component
@@ -37,11 +36,8 @@ class StartScriptTask implements Task {
   @Autowired
   ObjectMapper objectMapper
 
-  @Value('${script.master:master}')
-  String master
-
-  @Value('${script.job:job}')
-  String job
+  @Autowired
+  StartScriptConfigurationProperties startScriptConfigurationProperties
 
   @Override
   TaskResult execute(Stage stage) {
@@ -76,8 +72,8 @@ class StartScriptTask implements Task {
       parameters.REPO_URL = repoUrl
     }
 
-    String queuedBuild = buildService.build(master, job, parameters)
-    new DefaultTaskResult(ExecutionStatus.SUCCEEDED, [master: master, job: job, queuedBuild: queuedBuild])
+    String queuedBuild = buildService.build(startScriptConfigurationProperties.master, startScriptConfigurationProperties.job, parameters)
+    new DefaultTaskResult(ExecutionStatus.SUCCEEDED, [master: startScriptConfigurationProperties.master, job: startScriptConfigurationProperties.job, queuedBuild: queuedBuild])
   }
 
 }

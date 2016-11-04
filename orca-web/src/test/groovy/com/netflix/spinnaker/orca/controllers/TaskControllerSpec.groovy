@@ -52,8 +52,7 @@ class TaskControllerSpec extends Specification {
       new TaskController(
         front50Service: front50Service,
         executionRepository: executionRepository,
-        daysOfExecutionHistory: daysOfExecutionHistory,
-        numberOfOldPipelineExecutionsToInclude: numberOfOldPipelineExecutionsToInclude,
+        taskControllerProperties: new TaskControllerProperties(daysOfExecutionHistory: daysOfExecutionHistory, numberOfOldPipelineExecutionsToInclude: numberOfOldPipelineExecutionsToInclude),
         startTracker: startTracker,
         clock: clock
       )

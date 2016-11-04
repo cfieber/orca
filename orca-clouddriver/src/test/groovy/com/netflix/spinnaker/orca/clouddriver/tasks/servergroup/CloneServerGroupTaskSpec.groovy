@@ -19,6 +19,7 @@ package com.netflix.spinnaker.orca.clouddriver.tasks.servergroup
 import com.fasterxml.jackson.datatype.guava.GuavaModule
 import com.netflix.spinnaker.orca.clouddriver.KatoService
 import com.netflix.spinnaker.orca.clouddriver.model.TaskId
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
 import com.netflix.spinnaker.orca.jackson.OrcaObjectMapper
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.PipelineStage
@@ -27,7 +28,7 @@ import spock.lang.Specification
 import spock.lang.Subject
 
 class CloneServerGroupTaskSpec extends Specification {
-  @Subject task = new CloneServerGroupTask()
+  @Subject task = new CloneServerGroupTask(defaultBakeConfigurationProperties: new DefaultBakeConfigurationProperties())
   def stage = new PipelineStage(new Pipeline(), "cloneServerGroup")
   def mapper = new OrcaObjectMapper()
   def taskId = new TaskId(UUID.randomUUID().toString())

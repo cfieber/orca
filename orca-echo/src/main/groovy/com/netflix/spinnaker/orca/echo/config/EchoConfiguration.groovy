@@ -16,15 +16,14 @@
 
 package com.netflix.spinnaker.orca.echo.config
 
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import groovy.transform.CompileStatic
 import com.netflix.spinnaker.orca.echo.EchoService
 import com.netflix.spinnaker.orca.echo.spring.EchoNotifyingExecutionListener
 import com.netflix.spinnaker.orca.echo.spring.EchoNotifyingStageListener
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -40,24 +39,21 @@ import static retrofit.Endpoints.newFixedEndpoint
 @ConditionalOnExpression('${echo.enabled:true}')
 @ComponentScan("com.netflix.spinnaker.orca.echo")
 @CompileStatic
+@EnableConfigurationProperties(EchoConfigurationProperties)
 class EchoConfiguration {
 
-  @Autowired RetrofitClient retrofitClient
-  @Autowired RestAdapter.LogLevel retrofitLogLevel
-
   @Bean
-  Endpoint echoEndpoint(
-    @Value('${echo.baseUrl}') String echoBaseUrl) {
-    newFixedEndpoint(echoBaseUrl)
+  Endpoint echoEndpoint(EchoConfigurationProperties echoConfigurationProperties) {
+    newFixedEndpoint(echoConfigurationProperties.baseUrl)
   }
 
   @Bean
-  EchoService echoService(Endpoint echoEndpoint) {
+  EchoService echoService(Endpoint echoEndpoint, RetrofitClient retrofitClient, RestAdapter.LogLevel retrofitLogLevel) {
     new RestAdapter.Builder()
       .setEndpoint(echoEndpoint)
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(EchoService))
+      .setLog(new Slf4jRetrofitLogger(EchoService))
       .setConverter(new JacksonConverter())
       .build()
       .create(EchoService)

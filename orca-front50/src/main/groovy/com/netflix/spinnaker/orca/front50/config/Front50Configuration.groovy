@@ -21,10 +21,9 @@ import com.netflix.spinnaker.orca.front50.DependentPipelineStarter
 import com.netflix.spinnaker.orca.front50.Front50Service
 import com.netflix.spinnaker.orca.front50.spring.DependentPipelineExecutionListener
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import groovy.transform.CompileStatic
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -44,31 +43,26 @@ import static retrofit.Endpoints.newFixedEndpoint
   "com.netflix.spinnaker.orca.front50"
 ])
 @CompileStatic
+@EnableConfigurationProperties(Front50ConfigurationProperties)
 class Front50Configuration {
 
-  @Autowired
-  Client retrofitClient
-
-  @Autowired
-  RestAdapter.LogLevel retrofitLogLevel
-
-  @Autowired
-  RequestInterceptor spinnakerRequestInterceptor
-
   @Bean
-  Endpoint front50Endpoint(
-    @Value('${front50.baseUrl}') String front50BaseUrl) {
-    newFixedEndpoint(front50BaseUrl)
+  Endpoint front50Endpoint(Front50ConfigurationProperties front50ConfigurationProperties) {
+    newFixedEndpoint(front50ConfigurationProperties.baseUrl)
   }
 
   @Bean
-  Front50Service front50Service(Endpoint front50Endpoint, ObjectMapper mapper) {
+  Front50Service front50Service(Endpoint front50Endpoint,
+                                ObjectMapper mapper,
+                                Client retrofitClient,
+                                RestAdapter.LogLevel retrofitLogLevel,
+                                RequestInterceptor spinnakerRequestInterceptor) {
     new RestAdapter.Builder()
       .setRequestInterceptor(spinnakerRequestInterceptor)
       .setEndpoint(front50Endpoint)
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(Front50Service))
+      .setLog(new Slf4jRetrofitLogger(Front50Service))
       .setConverter(new JacksonConverter(mapper))
       .build()
       .create(Front50Service)

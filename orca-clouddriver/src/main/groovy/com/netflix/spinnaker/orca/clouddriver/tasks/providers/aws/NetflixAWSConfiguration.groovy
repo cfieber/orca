@@ -18,18 +18,16 @@ package com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws
 
 import com.netflix.spinnaker.orca.Task
 import com.netflix.spinnaker.orca.clouddriver.tasks.servergroup.WaitForAllInstancesDownTask
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
+@EnableConfigurationProperties(NetflixAWSTaskConfigurationProperties)
 class NetflixAWSConfiguration {
 
-  @Value('${tasks.useWaitForAllNetflixAWSInstancesDownTask:false}')
-  boolean useWaitForAllNetflixAWSInstancesDownTask
-
   @Bean
-  Class<? extends Task> waitForAllInstancesDownOnDisableTaskType() {
-    return useWaitForAllNetflixAWSInstancesDownTask ? WaitForAllNetflixAWSInstancesDownTask : WaitForAllInstancesDownTask
+  Class<? extends Task> waitForAllInstancesDownOnDisableTaskType(NetflixAWSTaskConfigurationProperties netflixAWSTaskConfigurationProperties) {
+    return netflixAWSTaskConfigurationProperties.useWaitForAllNetflixAWSInstancesDownTask ? WaitForAllNetflixAWSInstancesDownTask : WaitForAllInstancesDownTask
   }
 }

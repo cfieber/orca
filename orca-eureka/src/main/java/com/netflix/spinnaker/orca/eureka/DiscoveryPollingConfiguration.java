@@ -20,7 +20,6 @@ import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.spinnaker.orca.restart.InstanceStatusProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +27,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.env.Environment;
 
 import java.lang.management.ManagementFactory;
 import java.util.Optional;
@@ -41,8 +41,8 @@ public class DiscoveryPollingConfiguration {
     @Autowired
     ApplicationEventPublisher publisher;
 
-    @Value("${spring.application.name:orca}")
-    String appName;
+    @Autowired
+    Environment environment;
 
     @Bean
     public ApplicationListener<ContextRefreshedEvent> discoveryStatusPoller() {
@@ -56,6 +56,7 @@ public class DiscoveryPollingConfiguration {
 
     @Bean
     public InstanceStatusProvider instanceStatusProvider(String currentInstanceId) {
+      final String appName = environment.getProperty("spring.application.name", "orca");
       return (String app, String instanceId) -> appName.equals(app) && currentInstanceId.equals(instanceId);
     }
   }

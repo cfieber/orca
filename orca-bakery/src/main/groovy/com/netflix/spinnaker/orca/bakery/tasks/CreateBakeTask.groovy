@@ -18,6 +18,7 @@ package com.netflix.spinnaker.orca.bakery.tasks
 
 import com.netflix.spinnaker.orca.RetryableTask
 import com.netflix.spinnaker.orca.bakery.api.BakeStatus
+import com.netflix.spinnaker.orca.bakery.config.BakeryConfigurationProperties
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.util.OperatingSystem
 import com.netflix.spinnaker.orca.pipeline.util.PackageInfo
@@ -32,7 +33,6 @@ import com.netflix.spinnaker.orca.bakery.api.BakeRequest
 import com.netflix.spinnaker.orca.bakery.api.BakeryService
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import retrofit.RetrofitError
 
@@ -45,15 +45,7 @@ class CreateBakeTask implements RetryableTask {
 
   @Autowired BakeryService bakery
   @Autowired ObjectMapper mapper
-
-  @Value('${bakery.extractBuildDetails:false}')
-  boolean extractBuildDetails
-
-  @Value('${bakery.roscoApisEnabled:false}')
-  boolean roscoApisEnabled
-
-  @Value('${bakery.allowMissingPackageInstallation:false}')
-  boolean allowMissingPackageInstallation
+  @Autowired BakeryConfigurationProperties bakeryConfigurationProperties
 
   @Override
   TaskResult execute(Stage stage) {
@@ -121,7 +113,7 @@ class CreateBakeTask implements RetryableTask {
   @CompileDynamic
   private BakeRequest bakeFromContext(Stage stage) {
     PackageType packageType
-    if (roscoApisEnabled) {
+    if (bakeryConfigurationProperties.roscoApisEnabled) {
       def baseImage = bakery.getBaseImage(stage.context.cloudProviderType as String,
                                           stage.context.baseOs as String).toBlocking().single()
       packageType = baseImage.packageType as PackageType
@@ -133,14 +125,14 @@ class CreateBakeTask implements RetryableTask {
     PackageInfo packageInfo = new PackageInfo(stage,
                                               packageType.packageType,
                                               packageType.versionDelimiter,
-                                              extractBuildDetails,
+                                              bakeryConfigurationProperties.extractBuildDetails,
                                               false /* extractVersion */,
                                               mapper)
 
-    Map requestMap = packageInfo.findTargetPackage(allowMissingPackageInstallation)
+    Map requestMap = packageInfo.findTargetPackage(bakeryConfigurationProperties.allowMissingPackageInstallation)
 
     def request = mapper.convertValue(requestMap, BakeRequest)
-    if (!roscoApisEnabled) {
+    if (!bakeryConfigurationProperties.roscoApisEnabled) {
       request.other.clear()
     }
     return request

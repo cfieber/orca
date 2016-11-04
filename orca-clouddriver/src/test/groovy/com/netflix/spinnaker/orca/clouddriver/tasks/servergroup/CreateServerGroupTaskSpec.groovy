@@ -22,6 +22,8 @@ import com.netflix.spinnaker.orca.clouddriver.KatoService
 import com.netflix.spinnaker.orca.clouddriver.MortService
 import com.netflix.spinnaker.orca.clouddriver.model.TaskId
 import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.AmazonServerGroupCreator
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultSecurityGroupProperties
 import com.netflix.spinnaker.orca.clouddriver.tasks.providers.gce.GoogleServerGroupCreator
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.PipelineStage
@@ -559,6 +561,6 @@ class CreateServerGroupTaskSpec extends Specification {
   }
 
   private def buildServerGroupCreators(MortService mortService) {
-    return [new AmazonServerGroupCreator(mortService: mortService), new GoogleServerGroupCreator()]
+    return [new AmazonServerGroupCreator(mortService: mortService, defaultSecurityGroupProperties: new DefaultSecurityGroupProperties(), defaultBakeConfigurationProperties: new DefaultBakeConfigurationProperties()), new GoogleServerGroupCreator()]
   }
 }

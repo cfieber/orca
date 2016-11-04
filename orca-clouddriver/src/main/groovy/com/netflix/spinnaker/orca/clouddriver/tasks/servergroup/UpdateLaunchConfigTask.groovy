@@ -21,12 +21,12 @@ import com.netflix.spinnaker.orca.ExecutionStatus
 import com.netflix.spinnaker.orca.Task
 import com.netflix.spinnaker.orca.TaskResult
 import com.netflix.spinnaker.orca.clouddriver.KatoService
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
 import com.netflix.spinnaker.orca.clouddriver.utils.CloudProviderAware
 import com.netflix.spinnaker.orca.kato.tasks.DeploymentDetailsAware
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Component
@@ -38,8 +38,8 @@ class UpdateLaunchConfigTask implements Task, DeploymentDetailsAware, CloudProvi
   @Autowired
   KatoService kato
 
-  @Value('${default.bake.account:default}')
-  String defaultBakeAccount
+  @Autowired
+  DefaultBakeConfigurationProperties defaultBakeConfigurationProperties
 
   @Override
   TaskResult execute(Stage stage) {
@@ -71,9 +71,9 @@ class UpdateLaunchConfigTask implements Task, DeploymentDetailsAware, CloudProvi
     operation.asgName = operation.asgName ?: operation.serverGroupName
 
     def ops = []
-    if (stage.context.credentials != defaultBakeAccount) {
+    if (stage.context.credentials != defaultBakeConfigurationProperties.account) {
       ops << [allowLaunchDescription: convertAllowLaunch(getCredentials(stage),
-                                                         defaultBakeAccount,
+                                                         defaultBakeConfigurationProperties.account,
                                                          stage.context.region as String,
                                                          operation.amiName as String)]
       log.info("Generated `allowLaunchDescription` (allowLaunchDescription: ${ops})")

@@ -16,16 +16,16 @@
 
 package com.netflix.spinnaker.orca.bakery.config
 
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+
 import java.text.SimpleDateFormat
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy.LowerCaseWithUnderscoresStrategy
 import com.netflix.spinnaker.orca.bakery.api.BakeryService
 import com.netflix.spinnaker.orca.config.OrcaConfiguration
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
 import groovy.transform.CompileStatic
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -46,18 +46,16 @@ import static retrofit.Endpoints.newFixedEndpoint
   "com.netflix.spinnaker.orca.bakery.tasks"
 ])
 @CompileStatic
+@EnableConfigurationProperties(BakeryConfigurationProperties)
 class BakeryConfiguration {
 
-  @Autowired Client retrofitClient
-  @Autowired LogLevel retrofitLogLevel
-
   @Bean
-  Endpoint bakeryEndpoint(@Value('${bakery.baseUrl}') String bakeryBaseUrl) {
-    newFixedEndpoint(bakeryBaseUrl)
+  Endpoint bakeryEndpoint(BakeryConfigurationProperties bakeryConfigurationProperties) {
+    newFixedEndpoint(bakeryConfigurationProperties.baseUrl)
   }
 
   @Bean
-  BakeryService bakery(Endpoint bakeryEndpoint) {
+  BakeryService bakery(Endpoint bakeryEndpoint, LogLevel retrofitLogLevel, Client retrofitClient) {
     def objectMapper = new ObjectMapper()
       .setPropertyNamingStrategy(new LowerCaseWithUnderscoresStrategy())
       .setDateFormat(new SimpleDateFormat("YYYYMMDDHHmm"))
@@ -69,7 +67,7 @@ class BakeryConfiguration {
       .setConverter(new JacksonConverter(objectMapper))
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(BakeryService))
+      .setLog(new Slf4jRetrofitLogger(BakeryService))
       .build()
       .create(BakeryService)
   }

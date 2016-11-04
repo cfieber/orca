@@ -38,7 +38,7 @@ class AmazonImageTaggerSpec extends Specification {
   def imageTagger = new AmazonImageTagger(
     objectMapper: new ObjectMapper(),
     oortService: oortService,
-    defaultBakeAccount: "test"
+    defaultBakeConfigurationProperties: new DefaultBakeConfigurationProperties(account: 'test')
   )
 
   @Unroll
@@ -104,13 +104,13 @@ class AmazonImageTaggerSpec extends Specification {
         "tag1": "value1"
       ],
       regions    : ["us-east-1"] as Set<String>,
-      credentials: imageTagger.defaultBakeAccount
+      credentials: imageTagger.defaultBakeConfigurationProperties.account
     ]
     operationContext.operations[1]["allowLaunchDescription"] == [
       amiName    : "my-ami",
       account    : "prod",
       region     : "us-east-1",
-      credentials: imageTagger.defaultBakeAccount
+      credentials: imageTagger.defaultBakeConfigurationProperties.account
     ]
     operationContext.extraOutput.regions == ["us-east-1"]
     operationContext.extraOutput.originalTags == ["my-ami": ["my-ami-00001": [tag1: "originalValue1"]]]

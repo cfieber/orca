@@ -21,6 +21,8 @@ import com.google.common.collect.Maps
 import com.netflix.spinnaker.orca.ExecutionStatus
 import com.netflix.spinnaker.orca.clouddriver.KatoService
 import com.netflix.spinnaker.orca.clouddriver.model.TaskId
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultSecurityGroupProperties
 import com.netflix.spinnaker.orca.jackson.OrcaObjectMapper
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.PipelineStage
@@ -55,7 +57,8 @@ class CreateDeployTaskSpec extends Specification {
     mapper.registerModule(new GuavaModule())
 
     task.mapper = mapper
-    task.defaultBakeAccount = "test"
+    task.defaultBakeConfigurationProperties = new DefaultBakeConfigurationProperties("test")
+    task.defaultSecurityGroupProperties = new DefaultSecurityGroupProperties()
 
     stage.execution.stages.add(stage)
     stage.context = deployConfig
@@ -120,7 +123,7 @@ class CreateDeployTaskSpec extends Specification {
 
   def "don't create allowLaunch tasks when in same account"() {
     given:
-    task.defaultBakeAccount = 'fzlem'
+    task.defaultBakeConfigurationProperties = new DefaultBakeConfigurationProperties('fzlem')
     deployConfig.availabilityZones["us-west-1"] = []
 
     and:

@@ -26,8 +26,8 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.client.Client
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import rx.Observable
 import rx.functions.Func1
@@ -53,7 +53,12 @@ class PipelineRestartAgent extends AbstractPollingNotificationAgent {
 
   @Autowired
   PipelineRestartAgent(ObjectMapper mapper, Client jesqueClient, ExecutionRepository executionRepository, InstanceStatusProvider instanceStatusProvider,
-                       String currentInstanceId, @Value('${spring.application.name:orca}') String applicationName) {
+                       String currentInstanceId, Environment environment) {
+    this(mapper, jesqueClient, executionRepository, instanceStatusProvider, currentInstanceId, environment.getProperty('spring.application.name', 'orca'))
+  }
+
+  PipelineRestartAgent(ObjectMapper mapper, Client jesqueClient, ExecutionRepository executionRepository, InstanceStatusProvider instanceStatusProvider,
+                       String currentInstanceId, String applicationName) {
     super(mapper, jesqueClient)
     this.executionRepository = executionRepository
     this.instanceStatusProvider = instanceStatusProvider

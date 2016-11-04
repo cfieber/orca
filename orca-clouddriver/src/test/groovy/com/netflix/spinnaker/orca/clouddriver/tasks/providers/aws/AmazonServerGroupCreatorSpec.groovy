@@ -44,7 +44,8 @@ class AmazonServerGroupCreatorSpec extends Specification {
   ]
 
   def setup() {
-    creator.defaultBakeAccount = "test"
+    creator.defaultBakeConfigurationProperties = new DefaultBakeConfigurationProperties("test")
+    creator.defaultSecurityGroupProperties = new DefaultSecurityGroupProperties()
     stage.execution.stages.add(stage)
     stage.context = deployConfig
   }
@@ -91,7 +92,7 @@ class AmazonServerGroupCreatorSpec extends Specification {
 
   def "don't create allowLaunch tasks when in same account"() {
     given:
-      creator.defaultBakeAccount = 'fzlem'
+      creator.defaultBakeConfigurationProperties.account = 'fzlem'
       deployConfig.availabilityZones["us-west-1"] = []
 
     when:

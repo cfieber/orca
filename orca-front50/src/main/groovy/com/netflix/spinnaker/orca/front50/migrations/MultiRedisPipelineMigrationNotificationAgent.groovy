@@ -29,7 +29,6 @@ import com.netflix.spinnaker.orca.pipeline.persistence.jedis.JedisExecutionRepos
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.client.Client
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import redis.clients.jedis.Jedis
@@ -44,14 +43,13 @@ import java.util.function.Function
 @Component
 @ConditionalOnExpression(value = '${pollers.multiRedisPipelineMigration.enabled:false}')
 class MultiRedisPipelineMigrationNotificationAgent extends AbstractPollingNotificationAgent {
-  final String notificationType = "multiRedisOrchestrationMigration"
+  final String notificationType = "multiRedisPipelineMigration"
 
   Pool<Jedis> jedisPool
   Pool<Jedis> jedisPoolPrevious
   Front50Service front50Service
   JedisExecutionRepository executionRepositoryPrevious
 
-  @Value('${pollers.multiRedisPipelineMigration.intervalMs:3600000}')
   long pollingIntervalMs
 
   @Autowired
@@ -60,11 +58,13 @@ class MultiRedisPipelineMigrationNotificationAgent extends AbstractPollingNotifi
                                                Registry registry,
                                                Pool<Jedis> jedisPool,
                                                Pool<Jedis> jedisPoolPrevious,
-                                               Front50Service front50Service) {
+                                               Front50Service front50Service,
+                                               MultiRedisPipelineMigrationProperties multiRedisPipelineMigrationProperties) {
     super(objectMapper, jesqueClient)
     this.jedisPool = jedisPool
     this.jedisPoolPrevious = jedisPoolPrevious
     this.front50Service = front50Service
+    this.pollingIntervalMs = multiRedisPipelineMigrationProperties.intervalMs
 
     def queryAllScheduler = Schedulers.from(JedisExecutionRepository.newFixedThreadPool(registry, 1, "QueryAll"))
     def queryByAppScheduler = Schedulers.from(JedisExecutionRepository.newFixedThreadPool(registry, 1, "QueryByApp"))

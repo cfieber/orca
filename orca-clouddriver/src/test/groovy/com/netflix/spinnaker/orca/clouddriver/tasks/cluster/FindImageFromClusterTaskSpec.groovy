@@ -32,7 +32,7 @@ import spock.lang.Unroll
 class FindImageFromClusterTaskSpec extends Specification {
 
   @Subject
-      task = new FindImageFromClusterTask()
+      task = new FindImageFromClusterTask(findImageConfigurationProperties: new FindImageConfigurationProperties())
   OortService oortService = Mock(OortService)
 
   def setup() {

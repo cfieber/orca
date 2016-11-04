@@ -5,16 +5,16 @@ default:
   bake:
     account: default
 
+clouddriver:
+  baseUrl: http://localhost:7002
 front50:
   baseUrl: http://localhost:8080
-tide:
-  baseUrl: http://localhost:8090
 oort:
-  baseUrl: http://localhost:7002
+  baseUrl: ${clouddriver.baseUrl}
 mort:
-  baseUrl: http://localhost:7002
+  baseUrl: ${clouddriver.baseUrl}
 kato:
-  baseUrl: http://localhost:7002
+  baseUrl: ${clouddriver.baseUrl}
 echo:
   enabled: false
 igor:

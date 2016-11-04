@@ -30,7 +30,6 @@ import com.netflix.spinnaker.orca.pipeline.model.Stage
 import groovy.transform.Canonical
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import retrofit.RetrofitError
 
@@ -66,8 +65,8 @@ class FindImageFromClusterTask extends AbstractCloudProviderAwareTask implements
     FAIL
   }
 
-  @Value('${findImage.defaultResolveMissingLocations:false}')
-  boolean defaultResolveMissingLocations = false
+  @Autowired
+  FindImageConfigurationProperties findImageConfigurationProperties
 
   @Autowired
   OortService oortService
@@ -104,7 +103,7 @@ class FindImageFromClusterTask extends AbstractCloudProviderAwareTask implements
     String account = getCredentials(stage)
     FindImageConfiguration config = stage.mapTo(FindImageConfiguration)
     if (config.resolveMissingLocations == null) {
-      config.resolveMissingLocations = defaultResolveMissingLocations
+      config.resolveMissingLocations = findImageConfigurationProperties.defaultResolveMissingLocations
     }
 
     List<Location> missingLocations = []

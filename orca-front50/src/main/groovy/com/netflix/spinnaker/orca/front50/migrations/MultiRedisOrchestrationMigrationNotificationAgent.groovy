@@ -30,7 +30,6 @@ import com.netflix.spinnaker.orca.pipeline.persistence.jedis.JedisExecutionRepos
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.client.Client
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import redis.clients.jedis.Jedis
@@ -52,7 +51,6 @@ class MultiRedisOrchestrationMigrationNotificationAgent extends AbstractPollingN
   Front50Service front50Service
   JedisExecutionRepository executionRepositoryPrevious
 
-  @Value('${pollers.multiRedisOrchestrationMigration.intervalMs:3600000}')
   long pollingIntervalMs
 
   @Autowired
@@ -61,11 +59,13 @@ class MultiRedisOrchestrationMigrationNotificationAgent extends AbstractPollingN
                                                     Registry registry,
                                                     Pool<Jedis> jedisPool,
                                                     Pool<Jedis> jedisPoolPrevious,
-                                                    Front50Service front50Service) {
+                                                    Front50Service front50Service,
+                                                    MultiRedisOrchestrationMigrationProperties multiRedisOrchestrationMigrationProperties) {
     super(objectMapper, jesqueClient)
     this.jedisPool = jedisPool
     this.jedisPoolPrevious = jedisPoolPrevious
     this.front50Service = front50Service
+    this.pollingIntervalMs = multiRedisOrchestrationMigrationProperties.intervalMs
 
     def queryAllScheduler = Schedulers.from(JedisExecutionRepository.newFixedThreadPool(registry, 1, "QueryAll"))
     def queryByAppScheduler = Schedulers.from(JedisExecutionRepository.newFixedThreadPool(registry, 1, "QueryByApp"))

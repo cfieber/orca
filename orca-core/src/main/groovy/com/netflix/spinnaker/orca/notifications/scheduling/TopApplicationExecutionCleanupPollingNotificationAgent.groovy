@@ -25,7 +25,6 @@ import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository
 import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.ApplicationListener
 import org.springframework.stereotype.Component
@@ -67,11 +66,8 @@ class TopApplicationExecutionCleanupPollingNotificationAgent implements Applicat
   @Autowired
   Pool<Jedis> jedisPool
 
-  @Value('${pollers.topApplicationExecutionCleanup.intervalMs:3600000}')
-  long pollingIntervalMs
-
-  @Value('${pollers.topApplicationExecutionCleanup.threshold:2500}')
-  int threshold
+  @Autowired
+  TopApplicationExecutionCleanupProperties topApplicationExecutionCleanupProperties
 
   @PreDestroy
   void stopPolling() {
@@ -93,7 +89,7 @@ class TopApplicationExecutionCleanupPollingNotificationAgent implements Applicat
 
   private void startPolling() {
     subscription = Observable
-      .timer(pollingIntervalMs, TimeUnit.MILLISECONDS, scheduler)
+      .timer(topApplicationExecutionCleanupProperties.intervalMs, TimeUnit.MILLISECONDS, scheduler)
       .repeat()
       .subscribe({ Long interval -> tick() })
   }
@@ -104,11 +100,11 @@ class TopApplicationExecutionCleanupPollingNotificationAgent implements Applicat
     def jedis = jedisPool.resource
     try {
       jedis.keys("orchestration:app:*").each { String id ->
-        if (jedis.scard(id) > threshold) {
+        if (jedis.scard(id) > topApplicationExecutionCleanupProperties.threshold) {
           def (type, ignored, application) = id.split(":")
           switch (type) {
             case "orchestration":
-              log.info("Cleaning up orchestration executions (application: ${application}, threshold: ${threshold})")
+              log.info("Cleaning up orchestration executions (application: ${application}, threshold: ${topApplicationExecutionCleanupProperties.threshold})")
 
               def executionCriteria = new ExecutionRepository.ExecutionCriteria(limit: Integer.MAX_VALUE)
               cleanup(executionRepository.retrieveOrchestrationsForApplication(application, executionCriteria), application, "orchestration")
@@ -127,8 +123,8 @@ class TopApplicationExecutionCleanupPollingNotificationAgent implements Applicat
 
   private void cleanup(Observable<Execution> observable, String application, String type) {
     def executions = observable.filter(filter).map(mapper).toList().toBlocking().single().sort { it.startTime }
-    if (executions.size() > threshold) {
-      executions[0..(executions.size() - threshold - 1)].each {
+    if (executions.size() > topApplicationExecutionCleanupProperties.threshold) {
+      executions[0..(executions.size() - topApplicationExecutionCleanupProperties.threshold - 1)].each {
         def startTime = it.startTime ?: (it.buildTime ?: 0)
         log.info("Deleting ${type} execution ${it.id} (startTime: ${new Date(startTime)}, application: ${application}, pipelineConfigId: ${it.pipelineConfigId}, status: ${it.status})")
         switch (type) {

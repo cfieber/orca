@@ -23,11 +23,10 @@ import com.netflix.spinnaker.orca.clouddriver.MortService
 import com.netflix.spinnaker.orca.clouddriver.OortService
 import com.netflix.spinnaker.orca.jackson.OrcaObjectMapper
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import groovy.transform.CompileStatic
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -48,16 +47,8 @@ import static retrofit.Endpoints.newFixedEndpoint
   "com.netflix.spinnaker.orca.kato.tasks"
 ])
 @CompileStatic
+@EnableConfigurationProperties(CloudDriverConfigurationProperties)
 class CloudDriverConfiguration {
-
-  @Autowired
-  Client retrofitClient
-
-  @Autowired
-  RestAdapter.LogLevel retrofitLogLevel
-
-  @Autowired
-  RequestInterceptor spinnakerRequestInterceptor
 
   @ConditionalOnMissingBean(ObjectMapper)
   @Bean
@@ -66,42 +57,51 @@ class CloudDriverConfiguration {
   }
 
   @Bean
-  MortService mortDeployService(
-    @Value('${mort.baseUrl}') String mortBaseUrl, ObjectMapper mapper) {
+  MortService mortDeployService(CloudDriverConfigurationProperties cloudDriverConfigurationProperties,
+                                ObjectMapper mapper,
+                                Client retrofitClient,
+                                RestAdapter.LogLevel retrofitLogLevel,
+                                RequestInterceptor spinnakerRequestInterceptor) {
     new RestAdapter.Builder()
       .setRequestInterceptor(spinnakerRequestInterceptor)
-      .setEndpoint(newFixedEndpoint(mortBaseUrl))
+      .setEndpoint(newFixedEndpoint(cloudDriverConfigurationProperties.baseUrl))
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(MortService))
+      .setLog(new Slf4jRetrofitLogger(MortService))
       .setConverter(new JacksonConverter(mapper))
       .build()
       .create(MortService)
   }
 
   @Bean
-  OortService oortDeployService(
-    @Value('${oort.baseUrl}') String oortBaseUrl, ObjectMapper mapper) {
+  OortService oortDeployService(CloudDriverConfigurationProperties cloudDriverConfigurationProperties,
+                                ObjectMapper mapper,
+                                Client retrofitClient,
+                                RestAdapter.LogLevel retrofitLogLevel,
+                                RequestInterceptor spinnakerRequestInterceptor) {
     new RestAdapter.Builder()
       .setRequestInterceptor(spinnakerRequestInterceptor)
-      .setEndpoint(newFixedEndpoint(oortBaseUrl))
+      .setEndpoint(newFixedEndpoint(cloudDriverConfigurationProperties.baseUrl))
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(OortService))
+      .setLog(new Slf4jRetrofitLogger(OortService))
       .setConverter(new JacksonConverter(mapper))
       .build()
       .create(OortService)
   }
 
   @Bean
-  KatoRestService katoDeployService(
-    @Value('${kato.baseUrl}') String katoBaseUrl, ObjectMapper mapper) {
+  KatoRestService katoDeployService(CloudDriverConfigurationProperties cloudDriverConfigurationProperties,
+                                    ObjectMapper mapper,
+                                    Client retrofitClient,
+                                    RestAdapter.LogLevel retrofitLogLevel,
+                                    RequestInterceptor spinnakerRequestInterceptor) {
     new RestAdapter.Builder()
       .setRequestInterceptor(spinnakerRequestInterceptor)
-      .setEndpoint(newFixedEndpoint(katoBaseUrl))
+      .setEndpoint(newFixedEndpoint(cloudDriverConfigurationProperties.baseUrl))
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(KatoService))
+      .setLog(new Slf4jRetrofitLogger(KatoService))
       .setConverter(new JacksonConverter(mapper))
       .build()
       .create(KatoRestService)

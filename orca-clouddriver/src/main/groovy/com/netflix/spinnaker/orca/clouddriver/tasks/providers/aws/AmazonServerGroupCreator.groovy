@@ -23,27 +23,20 @@ import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Slf4j
 @Component
 class AmazonServerGroupCreator implements ServerGroupCreator, DeploymentDetailsAware {
 
-  static final List<String> DEFAULT_VPC_SECURITY_GROUPS = ["nf-infrastructure-vpc", "nf-datacenter-vpc"]
-  static final List<String> DEFAULT_SECURITY_GROUPS = ["nf-infrastructure", "nf-datacenter"]
-
   @Autowired
   MortService mortService
 
-  @Value('${default.bake.account:default}')
-  String defaultBakeAccount
+  @Autowired
+  DefaultBakeConfigurationProperties defaultBakeConfigurationProperties
 
-  @Value('${default.vpc.securityGroups:#{T(com.netflix.spinnaker.orca.kato.tasks.CreateDeployTask).DEFAULT_VPC_SECURITY_GROUPS}}')
-  List<String> defaultVpcSecurityGroups = DEFAULT_VPC_SECURITY_GROUPS
-
-  @Value('${default.securityGroups:#{T(com.netflix.spinnaker.orca.kato.tasks.CreateDeployTask).DEFAULT_SECURITY_GROUPS}}')
-  List<String> defaultSecurityGroups = DEFAULT_SECURITY_GROUPS
+  @Autowired
+  DefaultSecurityGroupProperties defaultSecurityGroupProperties
 
   boolean katoResultExpected = true
   String cloudProvider = "aws"
@@ -115,9 +108,9 @@ class AmazonServerGroupCreator implements ServerGroupCreator, DeploymentDetailsA
 
     if (operation.subnetType && !operation.subnetType.contains('vpc0')) {
       //TODO(cfieber)- remove the VPC special case asap
-      defaultSecurityGroupsForAccount = defaultVpcSecurityGroups
+      defaultSecurityGroupsForAccount = defaultSecurityGroupProperties.vpc.securityGroups
     } else {
-      defaultSecurityGroupsForAccount = defaultSecurityGroups
+      defaultSecurityGroupsForAccount = defaultSecurityGroupProperties.securityGroups
     }
 
     try {
@@ -136,10 +129,10 @@ class AmazonServerGroupCreator implements ServerGroupCreator, DeploymentDetailsA
 
   def allowLaunchOperations(Map createServerGroupOp) {
     def ops = []
-    if (createServerGroupOp.availabilityZones && createServerGroupOp.credentials != defaultBakeAccount) {
+    if (createServerGroupOp.availabilityZones && createServerGroupOp.credentials != defaultBakeConfigurationProperties.account) {
       ops.addAll(createServerGroupOp.availabilityZones.collect { String region, List<String> azs ->
         [account    : createServerGroupOp.credentials,
-         credentials: defaultBakeAccount,
+         credentials: defaultBakeConfigurationProperties.account,
          region     : region,
          amiName    : createServerGroupOp.amiName]
       })

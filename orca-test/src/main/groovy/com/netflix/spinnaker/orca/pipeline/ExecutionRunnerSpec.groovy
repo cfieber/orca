@@ -51,7 +51,8 @@ import static spock.util.matcher.HamcrestSupport.expect
 
 @ContextConfiguration(classes = [
   StageNavigator, WaitForRequisiteCompletionTask, Config,
-  WaitForRequisiteCompletionStage, RestrictExecutionDuringTimeWindow
+  WaitForRequisiteCompletionStage, RestrictExecutionDuringTimeWindow,
+  RestrictExecutionWindowConfigurationProperties
 ])
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 abstract class ExecutionRunnerSpec<R extends ExecutionRunner> extends Specification {

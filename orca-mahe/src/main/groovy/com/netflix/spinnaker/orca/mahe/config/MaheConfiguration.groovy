@@ -19,10 +19,9 @@ package com.netflix.spinnaker.orca.mahe.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.orca.mahe.MaheService
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -41,29 +40,21 @@ import static retrofit.Endpoints.newFixedEndpoint
   "com.netflix.spinnaker.orca.mahe.cleanup"
 ])
 @ConditionalOnProperty(value = 'mahe.baseUrl')
+@EnableConfigurationProperties(MaheConfigurationProperties)
 class MaheConfiguration {
 
-  @Autowired
-  Client retrofitClient
-
-  @Autowired
-  RestAdapter.LogLevel retrofitLogLevel
-
-  @Autowired
-  ObjectMapper objectMapper
-
   @Bean
-  Endpoint maheEndpoint(@Value('${mahe.baseUrl}') String maheBaseUrl) {
-    newFixedEndpoint(maheBaseUrl)
+  Endpoint maheEndpoint(MaheConfigurationProperties maheConfigurationProperties) {
+    newFixedEndpoint(maheConfigurationProperties.baseUrl)
   }
 
   @Bean
-  MaheService maheService(Endpoint maheEndpoint) {
+  MaheService maheService(Endpoint maheEndpoint, ObjectMapper objectMapper, Client retrofitClient, RestAdapter.LogLevel retrofitLogLevel) {
     new RestAdapter.Builder()
       .setEndpoint(maheEndpoint)
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(MaheService))
+      .setLog(new Slf4jRetrofitLogger(MaheService))
       .setConverter(new JacksonConverter(objectMapper))
       .build()
       .create(MaheService)

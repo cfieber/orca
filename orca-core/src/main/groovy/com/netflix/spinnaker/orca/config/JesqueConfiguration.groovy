@@ -27,8 +27,8 @@ import net.greghaines.jesque.client.ClientPoolImpl
 import net.greghaines.jesque.worker.WorkerPool
 import net.lariverosc.jesquespring.SpringWorkerFactory
 import net.lariverosc.jesquespring.SpringWorkerPool
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import redis.clients.jedis.Jedis
@@ -37,13 +37,14 @@ import redis.clients.util.Pool
 @Configuration
 @Slf4j
 @CompileStatic
+@EnableConfigurationProperties([RedisConfigurationProperties, JesqueConfigurationProperties])
 class JesqueConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(Config)
-  Config jesqueConfig(@Value('${redis.connection:redis://localhost:6379}') String connection) {
+  Config jesqueConfig(RedisConfigurationProperties redisConfigurationProperties) {
 
-    RedisConnectionInfo connectionInfo = RedisConnectionInfo.parseConnectionUri(connection)
+    RedisConnectionInfo connectionInfo = RedisConnectionInfo.parseConnectionUri(redisConfigurationProperties.connection)
 
     ConfigBuilder builder = new ConfigBuilder()
       .withHost(connectionInfo.host)
@@ -71,8 +72,8 @@ class JesqueConfiguration {
 
   @Bean(initMethod = "init", destroyMethod = "destroy")
   SpringWorkerPool workerPool(SpringWorkerFactory workerFactory,
-                              @Value('${jesque.numWorkers:1}') int numWorkers) {
-    def pool = new SpringWorkerPool(workerFactory, numWorkers)
+                              JesqueConfigurationProperties jesqueConfigurationProperties) {
+    def pool = new SpringWorkerPool(workerFactory, jesqueConfigurationProperties.numWorkers)
     pool.togglePause(true)
     log.info "Jesque worker pool started dormant"
     return pool

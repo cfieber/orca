@@ -19,10 +19,9 @@ package com.netflix.spinnaker.orca.mine.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.orca.mine.MineService
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -41,29 +40,21 @@ import static retrofit.Endpoints.newFixedEndpoint
   "com.netflix.spinnaker.orca.mine.tasks"
 ])
 @ConditionalOnProperty(value = 'mine.baseUrl')
+@EnableConfigurationProperties(MineConfigurationProperties)
 class MineConfiguration {
 
-  @Autowired
-  Client retrofitClient
-  @Autowired
-  RestAdapter.LogLevel retrofitLogLevel
-
-  @Autowired
-  ObjectMapper objectMapper
-
   @Bean
-  Endpoint mineEndpoint(
-    @Value('${mine.baseUrl}') String mineBaseUrl) {
-    newFixedEndpoint(mineBaseUrl)
+  Endpoint mineEndpoint(MineConfigurationProperties mineConfigurationProperties) {
+    newFixedEndpoint(mineConfigurationProperties.baseUrl)
   }
 
   @Bean
-  MineService mineService(Endpoint mineEndpoint) {
+  MineService mineService(Endpoint mineEndpoint, ObjectMapper objectMapper, Client retrofitClient, RestAdapter.LogLevel retrofitLogLevel) {
     new RestAdapter.Builder()
       .setEndpoint(mineEndpoint)
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(MineService))
+      .setLog(new Slf4jRetrofitLogger(MineService))
       .setConverter(new JacksonConverter(objectMapper))
       .build()
       .create(MineService)

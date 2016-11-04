@@ -25,9 +25,7 @@ import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.client.Client
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import rx.Observable
 import rx.functions.Func1
@@ -42,11 +40,8 @@ class PipelineCleanupPollingNotificationAgent extends AbstractPollingNotificatio
   @Autowired
   ExecutionRepository executionRepository
 
-  @Value('${pollers.pipelineCleanup.intervalMs:3600000}')
-  long pollingIntervalMs
-
-  @Value('${pollers.pipelineCleanup.daysToKeep:28}')
-  int daysToKeep
+  @Autowired
+  PipelineCleanupConfigurationProperties pipelineCleanupConfigurationProperties
 
   @Autowired
   PipelineCleanupPollingNotificationAgent(ObjectMapper objectMapper, Client jesqueClient) {
@@ -55,7 +50,7 @@ class PipelineCleanupPollingNotificationAgent extends AbstractPollingNotificatio
 
   @Override
   long getPollingInterval() {
-    return pollingIntervalMs / 1000
+    return pipelineCleanupConfigurationProperties.intervalMs / 1000
   }
 
   @Override
@@ -63,7 +58,7 @@ class PipelineCleanupPollingNotificationAgent extends AbstractPollingNotificatio
     return new Func1<Execution, Boolean>() {
       @Override
       Boolean call(Execution execution) {
-        long cutoff = (new Date() - daysToKeep).time
+        long cutoff = (new Date() - pipelineCleanupConfigurationProperties.daysToKeep).time
         return execution.status == ExecutionStatus.SUCCEEDED && execution.startTime < cutoff
       }
     }

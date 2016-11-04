@@ -18,6 +18,7 @@ package com.netflix.spinnaker.orca.clouddriver.tasks.servergroup
 
 import com.netflix.spinnaker.orca.clouddriver.KatoService
 import com.netflix.spinnaker.orca.clouddriver.model.TaskId
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.PipelineStage
 import rx.Observable
@@ -29,7 +30,7 @@ class UpdateLaunchConfigTaskSpec extends Specification {
   KatoService katoService = Mock(KatoService)
 
   @Subject
-  UpdateLaunchConfigTask task = new UpdateLaunchConfigTask(kato: katoService, defaultBakeAccount: "default")
+  UpdateLaunchConfigTask task = new UpdateLaunchConfigTask(kato: katoService, defaultBakeConfigurationProperties: new DefaultBakeConfigurationProperties())
 
   void "should populate deploy.server.groups to enable force cache refresh"() {
     setup:

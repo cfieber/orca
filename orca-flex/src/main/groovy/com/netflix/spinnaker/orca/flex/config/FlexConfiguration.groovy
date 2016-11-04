@@ -19,11 +19,10 @@ package com.netflix.spinnaker.orca.flex.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.orca.flex.FlexService
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import groovy.transform.CompileStatic
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -42,24 +41,21 @@ import static retrofit.Endpoints.newFixedEndpoint
   "com.netflix.spinnaker.orca.flex.tasks"
 ])
 @CompileStatic
+@EnableConfigurationProperties(FlexConfigurationProperties)
 class FlexConfiguration {
 
-  @Autowired Client retrofitClient
-  @Autowired RestAdapter.LogLevel retrofitLogLevel
-
   @Bean
-  Endpoint flexEndpoint(
-    @Value('${flex.baseUrl}') String flexBaseUrl) {
-    newFixedEndpoint(flexBaseUrl)
+  Endpoint flexEndpoint(FlexConfigurationProperties flexConfigurationProperties) {
+    newFixedEndpoint(flexConfigurationProperties.baseUrl)
   }
 
   @Bean
-  FlexService flexService(Endpoint flexEndpoint, ObjectMapper mapper) {
+  FlexService flexService(Endpoint flexEndpoint, ObjectMapper mapper, Client retrofitClient, RestAdapter.LogLevel retrofitLogLevel) {
     new RestAdapter.Builder()
       .setEndpoint(flexEndpoint)
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(FlexService))
+      .setLog(new Slf4jRetrofitLogger(FlexService))
       .setConverter(new JacksonConverter(mapper))
       .build()
       .create(FlexService)

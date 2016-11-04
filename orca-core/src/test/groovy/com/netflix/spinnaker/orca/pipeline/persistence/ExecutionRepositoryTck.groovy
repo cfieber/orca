@@ -22,6 +22,7 @@ import com.netflix.spinnaker.orca.ExecutionStatus
 import com.netflix.spinnaker.orca.pipeline.model.Orchestration
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository.ExecutionCriteria
+import com.netflix.spinnaker.orca.pipeline.persistence.jedis.ExecutionRepositoryConfigurationProperties
 import com.netflix.spinnaker.orca.pipeline.persistence.jedis.JedisExecutionRepository
 import redis.clients.jedis.Jedis
 import redis.clients.util.Pool
@@ -492,7 +493,10 @@ class JedisExecutionRepositorySpec extends ExecutionRepositoryTck<JedisExecution
 
   @Override
   JedisExecutionRepository createExecutionRepository() {
-    new JedisExecutionRepository(new NoopRegistry(), jedisPool, Optional.of(jedisPoolPrevious), 1, 50)
+    def cfg = new ExecutionRepositoryConfigurationProperties()
+    cfg.threadPool.executionRepository = 1
+    cfg.chunkSize.executionRepository = 50
+    new JedisExecutionRepository(new NoopRegistry(), jedisPool, Optional.of(jedisPoolPrevious), cfg)
   }
 
   def "cleans up indexes of non-existent executions"() {
@@ -571,7 +575,10 @@ class JedisExecutionRepositorySpec extends ExecutionRepositoryTck<JedisExecution
     repository.store(new Orchestration(application: "orca", executingInstance: "current"))
 
     and:
-    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), 1, 50)
+    def cfg = new ExecutionRepositoryConfigurationProperties()
+    cfg.threadPool.executionRepository = 1
+    cfg.chunkSize.executionRepository = 50
+    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), cfg)
     previousRepository.store(new Orchestration(application: "orca", executingInstance: "previous"))
     previousRepository.store(new Orchestration(application: "orca", executingInstance: "previous"))
     previousRepository.store(new Orchestration(application: "orca", executingInstance: "previous"))
@@ -593,7 +600,10 @@ class JedisExecutionRepositorySpec extends ExecutionRepositoryTck<JedisExecution
     repository.store(orchestration1)
 
     and:
-    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), 1, 50)
+    def cfg = new ExecutionRepositoryConfigurationProperties()
+    cfg.threadPool.executionRepository = 1
+    cfg.chunkSize.executionRepository = 50
+    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), cfg)
     def orchestration2 = new Orchestration(application: "orca")
     previousRepository.store(orchestration2)
 
@@ -621,7 +631,10 @@ class JedisExecutionRepositorySpec extends ExecutionRepositoryTck<JedisExecution
     repository.store(new Pipeline(application: "orca", pipelineConfigId: "pipeline-1", buildTime: 12))
 
     and:
-    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), 1, 50)
+    def cfg = new ExecutionRepositoryConfigurationProperties()
+    cfg.threadPool.executionRepository = 1
+    cfg.chunkSize.executionRepository = 50
+    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), cfg)
     previousRepository.store(new Pipeline(application: "orca", pipelineConfigId: "pipeline-1", buildTime: 7))
     previousRepository.store(new Pipeline(application: "orca", pipelineConfigId: "pipeline-1", buildTime: 8))
     previousRepository.store(new Pipeline(application: "orca", pipelineConfigId: "pipeline-1", buildTime: 9))
@@ -642,7 +655,10 @@ class JedisExecutionRepositorySpec extends ExecutionRepositoryTck<JedisExecution
     repository.store(pipeline1)
 
     and:
-    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), 1, 50)
+    def cfg = new ExecutionRepositoryConfigurationProperties()
+    cfg.threadPool.executionRepository = 1
+    cfg.chunkSize.executionRepository = 50
+    def previousRepository = new JedisExecutionRepository(new NoopRegistry(), jedisPoolPrevious, Optional.empty(), cfg)
     def pipeline2 = new Pipeline(application: "orca", pipelineConfigId: "pipeline-1", buildTime: 10)
     previousRepository.store(pipeline2)
 

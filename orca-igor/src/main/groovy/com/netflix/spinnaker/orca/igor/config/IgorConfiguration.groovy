@@ -19,11 +19,10 @@ package com.netflix.spinnaker.orca.igor.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.orca.igor.IgorService
 import com.netflix.spinnaker.orca.retrofit.RetrofitConfiguration
-import com.netflix.spinnaker.orca.retrofit.logging.RetrofitSlf4jLog
+import com.netflix.spinnaker.retrofit.Slf4jRetrofitLogger
 import groovy.transform.CompileStatic
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -39,24 +38,21 @@ import static retrofit.Endpoints.newFixedEndpoint
 @ConditionalOnProperty(value = 'igor.baseUrl')
 @CompileStatic
 @ComponentScan("com.netflix.spinnaker.orca.igor")
+@EnableConfigurationProperties(IgorConfigurationProperties)
 class IgorConfiguration {
 
-  @Autowired Client retrofitClient
-  @Autowired RestAdapter.LogLevel retrofitLogLevel
-
   @Bean
-  Endpoint igorEndpoint(
-    @Value('${igor.baseUrl}') String igorBaseUrl) {
-    newFixedEndpoint(igorBaseUrl)
+  Endpoint igorEndpoint(IgorConfigurationProperties igorConfigurationProperties) {
+    newFixedEndpoint(igorConfigurationProperties.baseUrl)
   }
 
   @Bean
-  IgorService igorService(Endpoint igorEndpoint, ObjectMapper mapper) {
+  IgorService igorService(Endpoint igorEndpoint, ObjectMapper mapper, Client retrofitClient, RestAdapter.LogLevel retrofitLogLevel) {
     new RestAdapter.Builder()
       .setEndpoint(igorEndpoint)
       .setClient(retrofitClient)
       .setLogLevel(retrofitLogLevel)
-      .setLog(new RetrofitSlf4jLog(IgorService))
+      .setLog(new Slf4jRetrofitLogger(IgorService))
       .setConverter(new JacksonConverter(mapper))
       .build()
       .create(IgorService)

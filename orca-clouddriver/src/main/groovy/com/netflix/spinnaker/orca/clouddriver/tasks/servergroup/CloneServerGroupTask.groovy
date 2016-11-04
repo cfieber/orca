@@ -23,12 +23,12 @@ import com.netflix.spinnaker.orca.Task
 import com.netflix.spinnaker.orca.TaskResult
 import com.netflix.spinnaker.orca.clouddriver.KatoService
 import com.netflix.spinnaker.orca.clouddriver.tasks.AbstractCloudProviderAwareTask
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
 import com.netflix.spinnaker.orca.clouddriver.utils.HealthHelper
 import com.netflix.spinnaker.orca.kato.tasks.DeploymentDetailsAware
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Slf4j
@@ -41,8 +41,8 @@ class CloneServerGroupTask extends AbstractCloudProviderAwareTask implements Tas
   @Autowired
   ObjectMapper mapper
 
-  @Value('${default.bake.account:default}')
-  String defaultBakeAccount
+  @Autowired
+  DefaultBakeConfigurationProperties defaultBakeConfigurationProperties
 
   @Override
   TaskResult execute(Stage stage) {
@@ -83,19 +83,19 @@ class CloneServerGroupTask extends AbstractCloudProviderAwareTask implements Tas
   }
 
   private List<Map<String, Object>> getDescriptions(Map operation) {
-    log.info("Generating descriptions (cloudProvider: ${operation.cloudProvider}, getCloudProvider: ${getCloudProvider(operation)}, credentials: ${operation.credentials}, defaultBakeAccount: ${defaultBakeAccount}, availabilityZones: ${operation.availabilityZones})")
+    log.info("Generating descriptions (cloudProvider: ${operation.cloudProvider}, getCloudProvider: ${getCloudProvider(operation)}, credentials: ${operation.credentials}, defaultBakeAccount: ${defaultBakeConfigurationProperties.account}, availabilityZones: ${operation.availabilityZones})")
 
     List<Map<String, Object>> descriptions = []
     // NFLX bakes images in their test account. This rigmarole is to allow the prod account access to that image.
     if (getCloudProvider(operation) == "aws" && // the operation is a clone of stage.context.
-        operation.credentials != defaultBakeAccount &&
+        operation.credentials != defaultBakeConfigurationProperties.account &&
         operation.availabilityZones &&
         operation.amiName) {
       def allowLaunchDescriptions = operation.availabilityZones.collect { String region, List<String> azs ->
         [
           allowLaunchDescription: [
             account    : operation.credentials,
-            credentials: defaultBakeAccount,
+            credentials: defaultBakeConfigurationProperties.account,
             region     : region,
             amiName    : operation.amiName
           ]

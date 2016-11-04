@@ -73,8 +73,7 @@ class RestrictExecutionDuringTimeWindowSpec extends AbstractBatchLifecycleSpec {
 
   void 'stage should be scheduled at #expectedTime when triggered at #scheduledTime with time windows #timeWindows'() {
     when:
-    SuspendExecutionDuringTimeWindowTask suspendExecutionDuringTimeWindowTask = new SuspendExecutionDuringTimeWindowTask()
-    suspendExecutionDuringTimeWindowTask.timeZoneId = "America/Los_Angeles"
+    SuspendExecutionDuringTimeWindowTask suspendExecutionDuringTimeWindowTask = new SuspendExecutionDuringTimeWindowTask(restrictExecutionWindowConfigurationProperties: new RestrictExecutionWindowConfigurationProperties())
     Date result = suspendExecutionDuringTimeWindowTask.calculateScheduledTime(scheduledTime, timeWindows, [])
 
     then:
@@ -128,8 +127,7 @@ class RestrictExecutionDuringTimeWindowSpec extends AbstractBatchLifecycleSpec {
   @Unroll
   void 'stage should consider whitelisted days when calculating scheduled time'() {
     when:
-    SuspendExecutionDuringTimeWindowTask suspendExecutionDuringTimeWindowTask = new SuspendExecutionDuringTimeWindowTask()
-    suspendExecutionDuringTimeWindowTask.timeZoneId = "America/Los_Angeles"
+    SuspendExecutionDuringTimeWindowTask suspendExecutionDuringTimeWindowTask = new SuspendExecutionDuringTimeWindowTask(restrictExecutionWindowConfigurationProperties: new RestrictExecutionWindowConfigurationProperties())
     Date result = suspendExecutionDuringTimeWindowTask.calculateScheduledTime(scheduledTime, timeWindows, days)
 
     then:
@@ -149,8 +147,7 @@ class RestrictExecutionDuringTimeWindowSpec extends AbstractBatchLifecycleSpec {
 
   void 'stage should be scheduled at #expectedTime when triggered at #scheduledTime with time windows #stage in stage context'() {
     when:
-    SuspendExecutionDuringTimeWindowTask suspendExecutionDuringTimeWindowTask = new SuspendExecutionDuringTimeWindowTask()
-    suspendExecutionDuringTimeWindowTask.timeZoneId = "America/Los_Angeles"
+    SuspendExecutionDuringTimeWindowTask suspendExecutionDuringTimeWindowTask = new SuspendExecutionDuringTimeWindowTask(restrictExecutionWindowConfigurationProperties: new RestrictExecutionWindowConfigurationProperties())
     Date result = suspendExecutionDuringTimeWindowTask.getTimeInWindow(stage, scheduledTime)
 
     then:

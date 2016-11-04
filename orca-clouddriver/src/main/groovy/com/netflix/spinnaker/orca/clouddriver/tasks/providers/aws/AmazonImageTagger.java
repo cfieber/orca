@@ -25,7 +25,6 @@ import com.netflix.spinnaker.orca.pipeline.model.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -48,8 +47,8 @@ public class AmazonImageTagger implements ImageTagger, CloudProviderAware {
   @Autowired
   ObjectMapper objectMapper;
 
-  @Value("${default.bake.account:default}")
-  String defaultBakeAccount;
+  @Autowired
+  DefaultBakeConfigurationProperties defaultBakeConfigurationProperties;
 
   @Override
   public ImageTagger.OperationContext getOperationContext(Stage stage) {
@@ -78,7 +77,7 @@ public class AmazonImageTagger implements ImageTagger, CloudProviderAware {
     for (MatchedImage matchedImage : matchedImages) {
       Image targetImage = new Image(
         matchedImage.imageName,
-        defaultBakeAccount,
+        defaultBakeConfigurationProperties.getAccount(),
         stageData.regions,
         tags
       );
@@ -100,14 +99,14 @@ public class AmazonImageTagger implements ImageTagger, CloudProviderAware {
 
       // Re-share the image in all other accounts (will result in tags being updated)
       matchedImage.accounts.stream()
-        .filter(account -> !account.equalsIgnoreCase(defaultBakeAccount))
+        .filter(account -> !account.equalsIgnoreCase(defaultBakeConfigurationProperties.getAccount()))
         .forEach(account -> {
           stageData.regions.forEach(region ->
             operations.add(
               ImmutableMap.<String, Map>builder()
                 .put(ALLOW_LAUNCH_OPERATION, ImmutableMap.builder()
                   .put("account", account)
-                  .put("credentials", defaultBakeAccount)
+                  .put("credentials", defaultBakeConfigurationProperties.getAccount())
                   .put("region", region)
                   .put("amiName", targetImage.imageName)
                   .build()

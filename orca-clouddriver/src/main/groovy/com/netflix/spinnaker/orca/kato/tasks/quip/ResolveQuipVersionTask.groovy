@@ -22,12 +22,12 @@ import com.netflix.spinnaker.orca.ExecutionStatus
 import com.netflix.spinnaker.orca.RetryableTask
 import com.netflix.spinnaker.orca.TaskResult
 import com.netflix.spinnaker.orca.bakery.api.BakeryService
+import com.netflix.spinnaker.orca.bakery.config.BakeryConfigurationProperties
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import com.netflix.spinnaker.orca.pipeline.util.OperatingSystem
 import com.netflix.spinnaker.orca.pipeline.util.PackageInfo
 import com.netflix.spinnaker.orca.pipeline.util.PackageType
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 import java.util.concurrent.TimeUnit
@@ -42,11 +42,8 @@ class ResolveQuipVersionTask implements RetryableTask {
   @Autowired
   BakeryService bakeryService
 
-  @Value('${bakery.roscoApisEnabled:false}')
-  boolean roscoApisEnabled
-
-  @Value('${bakery.allowMissingPackageInstallation:false}')
-  boolean allowMissingPackageInstallation
+  @Autowired
+  BakeryConfigurationProperties bakeryConfigurationProperties
 
   @Autowired
   ObjectMapper objectMapper
@@ -54,7 +51,7 @@ class ResolveQuipVersionTask implements RetryableTask {
   @Override
   TaskResult execute(Stage stage) {
     PackageType packageType
-    if (roscoApisEnabled) {
+    if (bakeryConfigurationProperties.roscoApisEnabled) {
       def baseImage = bakeryService.getBaseImage(stage.context.cloudProviderType as String,
         stage.context.baseOs as String).toBlocking().single()
       packageType = baseImage.packageType
@@ -68,7 +65,7 @@ class ResolveQuipVersionTask implements RetryableTask {
       true, // extractBuildDetails
       true, // extractVersion
       objectMapper)
-    String version = stage.context?.patchVersion ?:  packageInfo.findTargetPackage(allowMissingPackageInstallation)?.packageVersion
+    String version = stage.context?.patchVersion ?:  packageInfo.findTargetPackage(bakeryConfigurationProperties.allowMissingPackageInstallation)?.packageVersion
 
     return new DefaultTaskResult(ExecutionStatus.SUCCEEDED, [version: version])
   }

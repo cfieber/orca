@@ -20,6 +20,7 @@ import com.netflix.spinnaker.orca.bakery.api.BakeRequest
 import com.netflix.spinnaker.orca.bakery.api.BakeStatus
 import com.netflix.spinnaker.orca.bakery.api.BakeryService
 import com.netflix.spinnaker.orca.bakery.api.BaseImage
+import com.netflix.spinnaker.orca.bakery.config.BakeryConfigurationProperties
 import com.netflix.spinnaker.orca.jackson.OrcaObjectMapper
 import com.netflix.spinnaker.orca.pipeline.model.*
 import com.netflix.spinnaker.orca.pipeline.util.PackageType
@@ -44,7 +45,7 @@ import static java.util.UUID.randomUUID
 class CreateBakeTaskSpec extends Specification {
 
   @Subject
-  task = new CreateBakeTask()
+  task = new CreateBakeTask(bakeryConfigurationProperties: new BakeryConfigurationProperties())
   Stage stage
   def mapper = new OrcaObjectMapper()
 
@@ -348,7 +349,7 @@ class CreateBakeTaskSpec extends Specification {
     task.bakery = Stub(BakeryService) {
       createBake(*_) >> Observable.from(runningStatus)
     }
-    task.extractBuildDetails = true
+    task.bakeryConfigurationProperties = new BakeryConfigurationProperties(extractBuildDetails: true)
 
     when:
     def result = task.execute(stage)
@@ -378,7 +379,7 @@ class CreateBakeTaskSpec extends Specification {
     task.bakery = Stub(BakeryService) {
       createBake(*_) >> Observable.from(runningStatus)
     }
-    task.extractBuildDetails = true
+    task.bakeryConfigurationProperties = new BakeryConfigurationProperties(extractBuildDetails: true)
 
     when:
     def result = task.execute(stage)
@@ -406,7 +407,7 @@ class CreateBakeTaskSpec extends Specification {
     task.bakery = Stub(BakeryService) {
       createBake(*_) >> Observable.from(runningStatus)
     }
-    task.extractBuildDetails = true
+    task.bakeryConfigurationProperties = new BakeryConfigurationProperties(extractBuildDetails: true)
 
     when:
     def result = task.execute(stage)
@@ -434,7 +435,7 @@ class CreateBakeTaskSpec extends Specification {
     task.bakery = Stub(BakeryService) {
       createBake(*_) >> Observable.from(runningStatus)
     }
-    task.extractBuildDetails = true
+    task.bakeryConfigurationProperties = new BakeryConfigurationProperties(extractBuildDetails: true)
 
     when:
     def result = task.execute(stage)
@@ -462,7 +463,7 @@ class CreateBakeTaskSpec extends Specification {
     task.bakery = Stub(BakeryService) {
       createBake(*_) >> Observable.from(runningStatus)
     }
-    task.extractBuildDetails = extractBuildDetails
+    task.bakeryConfigurationProperties = new BakeryConfigurationProperties(extractBuildDetails: extractBuildDetails)
 
     when:
     def result = task.execute(stage)
@@ -490,7 +491,7 @@ class CreateBakeTaskSpec extends Specification {
 
     Stage stage = new PipelineStage(pipelineWithTrigger, "bake", bakeConfig)
     task.bakery = Mock(BakeryService)
-    task.extractBuildDetails = true
+    task.bakeryConfigurationProperties = new BakeryConfigurationProperties(extractBuildDetails: true)
 
     when:
     task.execute(stage)

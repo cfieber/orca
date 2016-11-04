@@ -31,7 +31,6 @@ import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionNotFoundExceptio
 import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository
 import com.netflix.spinnaker.security.AuthenticatedRequest
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PostAuthorize
 import org.springframework.security.access.prepost.PostFilter
@@ -63,11 +62,8 @@ class TaskController {
   @Autowired
   Collection<StageDefinitionBuilder> stageBuilders
 
-  @Value('${tasks.daysOfExecutionHistory:14}')
-  int daysOfExecutionHistory
-
-  @Value('${tasks.numberOfOldPipelineExecutionsToInclude:2}')
-  int numberOfOldPipelineExecutionsToInclude
+  @Autowired
+  TaskControllerProperties taskControllerProperties
 
   Clock clock = Clock.systemUTC()
 
@@ -82,7 +78,7 @@ class TaskController {
       statuses: (statuses.split(",") as Collection)
     )
 
-    def startTimeCutoff = (new Date(clock.millis()) - daysOfExecutionHistory).time
+    def startTimeCutoff = (new Date(clock.millis()) - taskControllerProperties.daysOfExecutionHistory).time
     executionRepository.retrieveOrchestrationsForApplication(application, executionCriteria)
                        .filter({ Orchestration orchestration -> !orchestration.startTime || (orchestration.startTime > startTimeCutoff) })
                        .map({ Orchestration orchestration -> convert(orchestration) })
@@ -265,7 +261,7 @@ class TaskController {
 
   private List<Pipeline> filterPipelinesByHistoryCutoff(List<Pipeline> pipelines) {
     // TODO-AJ The eventual goal is to return `allPipelines` without the need to group + filter below (WIP)
-    def cutoffTime = (new Date(clock.millis()) - daysOfExecutionHistory).time
+    def cutoffTime = (new Date(clock.millis()) - taskControllerProperties.daysOfExecutionHistory).time
 
     def pipelinesSatisfyingCutoff = []
     pipelines.groupBy { it.pipelineConfigId }.values().each { List<Pipeline> pipelinesGroup ->
@@ -273,7 +269,7 @@ class TaskController {
       def recentPipelines = sortedPipelinesGroup.findAll { !it.startTime || it.startTime > cutoffTime }
       if (!recentPipelines && sortedPipelinesGroup) {
         // no pipeline executions within `daysOfExecutionHistory` so include the first `numberOfOldPipelineExecutionsToInclude`
-        def upperBounds = Math.min(sortedPipelinesGroup.size(), numberOfOldPipelineExecutionsToInclude) - 1
+        def upperBounds = Math.min(sortedPipelinesGroup.size(), taskControllerProperties.numberOfOldPipelineExecutionsToInclude) - 1
         recentPipelines = sortedPipelinesGroup[0..upperBounds]
       }
 

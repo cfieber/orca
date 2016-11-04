@@ -48,8 +48,8 @@ class BakeryServiceSpec extends Specification {
     bakeURI = "$httpServer.baseURI$bakePath"
     statusURI = "$httpServer.baseURI$statusPath"
 
-    bakery = new BakeryConfiguration(retrofitClient: new OkClient(), retrofitLogLevel: FULL)
-        .bakery(newFixedEndpoint(httpServer.baseURI))
+    bakery = new BakeryConfiguration()
+        .bakery(newFixedEndpoint(httpServer.baseURI), FULL, new OkClient())
   }
 
   def "can lookup a bake status"() {

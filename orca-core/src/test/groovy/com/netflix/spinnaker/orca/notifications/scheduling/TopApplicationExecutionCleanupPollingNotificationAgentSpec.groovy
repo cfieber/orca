@@ -30,7 +30,7 @@ import spock.lang.Specification
 class TopApplicationExecutionCleanupPollingNotificationAgentSpec extends Specification {
   void "filter should only consider SUCCEEDED executions"() {
     given:
-    def filter = new TopApplicationExecutionCleanupPollingNotificationAgent().filter
+    def filter = new TopApplicationExecutionCleanupPollingNotificationAgent(topApplicationExecutionCleanupProperties: new TopApplicationExecutionCleanupProperties()).filter
 
     expect:
     ExecutionStatus.values().each {
@@ -66,7 +66,8 @@ class TopApplicationExecutionCleanupPollingNotificationAgentSpec extends Specifi
     def orchestrations = buildExecutions(startTime, 3)
     def pipelines = buildExecutions(startTime, 3, "P1") + buildExecutions(startTime, 5, "P2")
 
-    def agent = new TopApplicationExecutionCleanupPollingNotificationAgent(threshold: 2)
+    def agent = new TopApplicationExecutionCleanupPollingNotificationAgent()
+    agent.topApplicationExecutionCleanupProperties = new TopApplicationExecutionCleanupProperties(threshold: 2)
     agent.jedisPool = Mock(Pool) {
       1 * getResource() >> {
         return Mock(Jedis) {

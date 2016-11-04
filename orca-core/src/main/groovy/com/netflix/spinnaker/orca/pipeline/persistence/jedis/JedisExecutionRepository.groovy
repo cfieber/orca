@@ -32,7 +32,6 @@ import com.netflix.spinnaker.orca.pipeline.util.StageNavigator
 import groovy.transform.CompileDynamic
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
 import redis.clients.jedis.Jedis
@@ -69,15 +68,13 @@ class JedisExecutionRepository implements ExecutionRepository {
     Registry registry,
     Pool<Jedis> jedisPool,
     Optional<Pool<Jedis>> jedisPoolPrevious,
-    @Value('${threadPool.executionRepository:150}') int threadPoolSize,
-    @Value('${chunkSize.executionRepository:75}') int threadPoolChunkSize
-  ) {
+    ExecutionRepositoryConfigurationProperties executionRepositoryConfigurationProperties) {
     this(
       jedisPool,
       jedisPoolPrevious,
       Schedulers.from(newFixedThreadPool(registry, 10, "QueryAll")),
-      Schedulers.from(newFixedThreadPool(registry, threadPoolSize, "QueryByApp")),
-      threadPoolChunkSize
+      Schedulers.from(newFixedThreadPool(registry, executionRepositoryConfigurationProperties.threadPool.executionRepository, "QueryByApp")),
+      executionRepositoryConfigurationProperties.chunkSize.executionRepository
     )
   }
 

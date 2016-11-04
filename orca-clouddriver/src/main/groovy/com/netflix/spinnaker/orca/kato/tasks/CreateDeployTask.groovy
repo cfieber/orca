@@ -24,13 +24,14 @@ import com.netflix.spinnaker.orca.TaskResult
 import com.netflix.spinnaker.orca.clouddriver.KatoService
 import com.netflix.spinnaker.orca.clouddriver.model.TaskId
 import com.netflix.spinnaker.orca.clouddriver.tasks.AbstractCloudProviderAwareTask
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultBakeConfigurationProperties
+import com.netflix.spinnaker.orca.clouddriver.tasks.providers.aws.DefaultSecurityGroupProperties
 import com.netflix.spinnaker.orca.clouddriver.utils.HealthHelper
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Slf4j
@@ -38,23 +39,17 @@ import org.springframework.stereotype.Component
 @Deprecated
 class CreateDeployTask extends AbstractCloudProviderAwareTask implements Task, DeploymentDetailsAware {
 
-  static final List<String> DEFAULT_VPC_SECURITY_GROUPS = ["nf-infrastructure-vpc", "nf-datacenter-vpc"]
-  static final List<String> DEFAULT_SECURITY_GROUPS = ["nf-infrastructure", "nf-datacenter"]
-
   @Autowired
   KatoService kato
 
   @Autowired
   ObjectMapper mapper
 
-  @Value('${default.bake.account:default}')
-  String defaultBakeAccount
+  @Autowired
+  DefaultBakeConfigurationProperties defaultBakeConfigurationProperties
 
-  @Value('${default.vpc.securityGroups:#{T(com.netflix.spinnaker.orca.kato.tasks.CreateDeployTask).DEFAULT_VPC_SECURITY_GROUPS}}')
-  List<String> defaultVpcSecurityGroups = DEFAULT_VPC_SECURITY_GROUPS
-
-  @Value('${default.securityGroups:#{T(com.netflix.spinnaker.orca.kato.tasks.CreateDeployTask).DEFAULT_SECURITY_GROUPS}}')
-  List<String> defaultSecurityGroups = DEFAULT_SECURITY_GROUPS
+  @Autowired
+  DefaultSecurityGroupProperties defaultSecurityGroupProperties
 
   @Override
   TaskResult execute(Stage stage) {
@@ -114,18 +109,18 @@ class CreateDeployTask extends AbstractCloudProviderAwareTask implements Task, D
     if (cloudProvider != 'titus') {
       //TODO(cfieber)- remove the VPC special case asap
       if (deployOperation.subnetType && !deployOperation.subnetType.contains('vpc0')) {
-        addAllNonEmpty(deployOperation.securityGroups, defaultVpcSecurityGroups)
+        addAllNonEmpty(deployOperation.securityGroups, defaultSecurityGroupProperties.vpc.securityGroups)
       } else {
-        addAllNonEmpty(deployOperation.securityGroups, defaultSecurityGroups)
+        addAllNonEmpty(deployOperation.securityGroups, defaultSecurityGroupProperties.securityGroups)
       }
     }
 
     List<Map<String, Object>> descriptions = []
 
-    if (deployOperation.credentials != defaultBakeAccount) {
+    if (deployOperation.credentials != defaultBakeConfigurationProperties.account) {
       if (deployOperation.availabilityZones) {
         descriptions.addAll(deployOperation.availabilityZones.collect { String region, List<String> azs ->
-          [allowLaunchDescription: convertAllowLaunch(deployOperation.credentials, defaultBakeAccount, region,
+          [allowLaunchDescription: convertAllowLaunch(deployOperation.credentials, defaultBakeConfigurationProperties.account, region,
                                                       deployOperation.amiName)]
         })
 

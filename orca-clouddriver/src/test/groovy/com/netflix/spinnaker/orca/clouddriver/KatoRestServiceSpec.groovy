@@ -17,6 +17,7 @@
 package com.netflix.spinnaker.orca.clouddriver
 
 import com.netflix.spinnaker.orca.clouddriver.config.CloudDriverConfiguration
+import com.netflix.spinnaker.orca.clouddriver.config.CloudDriverConfigurationProperties
 import com.netflix.spinnaker.orca.jackson.OrcaObjectMapper
 import com.netflix.spinnaker.orca.test.httpserver.HttpServerRule
 import org.junit.Rule
@@ -46,9 +47,9 @@ class KatoRestServiceSpec extends Specification {
   final taskId = "e1jbn3"
 
   def setup() {
-    service = new CloudDriverConfiguration(
-      retrofitClient: new OkClient(), retrofitLogLevel: FULL, spinnakerRequestInterceptor: noopInterceptor
-    ).katoDeployService(httpServer.baseURI, new OrcaObjectMapper())
+    def cfg = new CloudDriverConfigurationProperties()
+    cfg.clouddriver.baseUrl = httpServer.baseURI
+    service = new CloudDriverConfiguration().katoDeployService(cfg, new OrcaObjectMapper(), new OkClient(), FULL, noopInterceptor)
   }
 
   def "can interpret the response from an operation request"() {
