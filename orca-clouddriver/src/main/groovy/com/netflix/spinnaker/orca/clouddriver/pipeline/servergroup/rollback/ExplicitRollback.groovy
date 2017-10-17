@@ -17,6 +17,7 @@
 package com.netflix.spinnaker.orca.clouddriver.pipeline.servergroup.rollback
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.netflix.frigga.Names
 import com.netflix.spinnaker.orca.clouddriver.pipeline.providers.aws.ApplySourceServerGroupCapacityStage
 import com.netflix.spinnaker.orca.clouddriver.pipeline.providers.aws.CaptureSourceServerGroupCapacityStage
 import com.netflix.spinnaker.orca.clouddriver.pipeline.servergroup.DisableServerGroupStage
@@ -54,6 +55,14 @@ class ExplicitRollback implements Rollback {
   @Autowired
   @JsonIgnore
   ApplySourceServerGroupCapacityStage applySourceServerGroupCapacityStage
+
+  @Override
+  RollbackCluster getRollbackCluster(Stage parentStage) {
+    //TODO(cfieber): pull Source into its own top level object
+    def source = parentStage.mapTo(ResizeStrategy.Source)
+    Names names = Names.parseName(source.serverGroupName)
+    return new RollbackCluster(source.cloudProvider, source.credentials, names.cluster, source.region)
+  }
 
   @JsonIgnore
   @Override

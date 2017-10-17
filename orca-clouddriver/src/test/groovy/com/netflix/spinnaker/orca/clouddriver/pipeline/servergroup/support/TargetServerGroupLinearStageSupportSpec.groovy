@@ -93,10 +93,10 @@ class TargetServerGroupLinearStageSupportSpec extends Specification {
 
   def "should inject a stage before for each extra target when target is not dynamically bound"() {
     given:
-    def stage = stage {
-      type = "test"
-      context["region"] = "should be overridden"
-    }
+    def stage = new Stage(Execution.newPipeline("orca"), "test", ['region': 'should be overridden'])
+
+    when:
+    def syntheticStages = supportStage.composeTargets(stage).findAll { !['acquireLock', 'releaseLock'].contains(it.type) }.groupBy { it.syntheticStageOwner }
 
     and:
     resolver.resolveByParams(_) >> [
@@ -140,8 +140,10 @@ class TargetServerGroupLinearStageSupportSpec extends Specification {
     ]
 
     when:
+    //TODO(cfieber): WTFMerged this
     def graph = StageGraphBuilder.beforeStages(stage)
     supportStage.beforeStages(stage, graph)
+    def syntheticStages = supportStage.composeTargets(stage).findAll { !['acquireLock', 'releaseLock'].contains(it.type) }.groupBy { it.syntheticStageOwner }
 
     then:
     graph.build()*.name == beforeNames

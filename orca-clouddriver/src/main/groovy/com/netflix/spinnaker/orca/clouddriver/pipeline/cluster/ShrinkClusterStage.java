@@ -57,6 +57,7 @@ public class ShrinkClusterStage extends AbstractClusterWideClouddriverOperationS
     @Nonnull Stage parent,
     @Nonnull StageGraphBuilder graph
   ) {
+    //TODO(cfieber): in PR it was aroundStages and we call buildAroundStages(stage, this)
     if (Objects.equals(parent.getContext().get("allowDeleteActive"), true)) {
       Map<String, Object> context = new HashMap<>(parent.getContext());
       context.put("remainingEnabledServerGroups", parent.getContext().get("shrinkToSize"));

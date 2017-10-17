@@ -17,7 +17,11 @@
 package com.netflix.spinnaker.orca.clouddriver.pipeline.servergroup.support
 
 import javax.annotation.Nonnull
+import com.netflix.frigga.Names
+import com.netflix.spinnaker.orca.clouddriver.utils.LockNameHelper
 import com.netflix.spinnaker.orca.kato.pipeline.Nameable
+import com.netflix.spinnaker.orca.locks.LockContext
+import com.netflix.spinnaker.orca.locks.LockableStageSupport
 import com.netflix.spinnaker.orca.pipeline.StageDefinitionBuilder
 import com.netflix.spinnaker.orca.pipeline.TaskNode
 import com.netflix.spinnaker.orca.pipeline.graph.StageGraphBuilder
@@ -55,6 +59,15 @@ abstract class TargetServerGroupLinearStageSupport implements StageDefinitionBui
   protected void postStatic(Map<String, Object> descriptor, StageGraphBuilder graph) {
   }
 
+  protected boolean lockTargetServerGroup() {
+    return true
+  }
+
+  @Override
+  def List<Stage> aroundStages(Stage parentStage) {
+    return composeTargets(parentStage)
+  }
+
   /**
    * Override to supply before stages for individual target stages operating on a
    * dynamic target.
@@ -83,6 +96,16 @@ abstract class TargetServerGroupLinearStageSupport implements StageDefinitionBui
 
     copyOfContext.remove("serverGroupName")
     copyOfContext.remove("asgName")
+    def targets = resolver.resolveByParams(params)
+    def descriptionList = buildStaticTargetDescriptions(stage, targets)
+    def releaseLockStages = []
+    for (description in descriptionList) {
+      LockContext thisLock = buildLockContext(stage, description)
+      stages << LockableStageSupport.buildAcquireLockStage(stage, thisLock)
+      releaseLockStages << LockableStageSupport.buildReleaseLockStage(stage, thisLock)
+    }
+    def first = descriptionList.remove(0)
+    stage.context.putAll(first)
 
     return copyOfContext
   }
@@ -131,6 +154,7 @@ abstract class TargetServerGroupLinearStageSupport implements StageDefinitionBui
         postStatic(parent.context, graph)
       }
     }
+    stages.addAll(releaseLockStages)
   }
 
   void composeTargets(Stage parent, StageGraphBuilder graph) {
@@ -160,7 +184,23 @@ abstract class TargetServerGroupLinearStageSupport implements StageDefinitionBui
     }
   }
 
+  private LockContext buildLockContext(Stage stage, Map<String, Object> staticTarget) {
+    String cluster = Names.parseName(staticTarget.serverGroupName).cluster
+    String lockName = LockNameHelper.buildClusterLockName(staticTarget.cloudProvider, staticTarget.credentials, cluster, staticTarget.targetLocation.value)
+    return LockableStageSupport.buildLockContext(stage, lockName)
+  }
+
   private void composeDynamicTargets(Stage stage, TargetServerGroup.Params params, StageGraphBuilder graph) {
+    if (stage.parentStageId) {
+      // We only want to determine the target server groups once per stage, so only inject if this is the root stage,
+      // i.e. the one the user configured.
+      // This may become a bad assumption, or a limiting one, in that we cannot inject a dynamic stage ourselves
+      // as part of some other stage that is not itself injecting a determineTargetReferences stage.
+      return []
+    }
+
+    def stages = []
+
     // Scrub the context of any preset location.
     stage.context.with {
       remove("zone")
