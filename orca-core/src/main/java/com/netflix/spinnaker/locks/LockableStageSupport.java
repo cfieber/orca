@@ -79,7 +79,7 @@ public interface LockableStageSupport extends StageDefinitionBuilder {
           throw new IllegalStateException("Found strategy but no parentPipelineId");
         }
         String parentPipelineApplication = (String) parameters.get("parentPipelineApplication");
-        String parentTriggerType = Boolean.TRUE.equals(trigger.getOtherProperties().getOrDefault("isPipeline", true)) ? "pipeline" : "orchestration";
+        String parentTriggerType = Boolean.TRUE.equals(trigger.getOther().getOrDefault("isPipeline", true)) ? "pipeline" : "orchestration";
         return new LockValues(parentPipelineApplication, parentTriggerType, parentPipelineId);
       }
     }

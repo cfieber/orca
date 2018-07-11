@@ -26,26 +26,30 @@ import com.netflix.spinnaker.orca.pipeline.TaskNode;
 import com.netflix.spinnaker.orca.pipeline.model.Stage;
 
 import java.beans.Introspector;
-import com.netflix.spinnaker.orca.clouddriver.pipeline.servergroup.support.Location
-import com.netflix.spinnaker.orca.clouddriver.tasks.DetermineHealthProvidersTask
-import com.netflix.spinnaker.orca.clouddriver.tasks.MonitorKatoTask
-import com.netflix.spinnaker.orca.clouddriver.tasks.cluster.AbstractClusterWideClouddriverTask
-import com.netflix.spinnaker.orca.clouddriver.tasks.cluster.AbstractClusterWideClouddriverTask.ClusterSelection
-import com.netflix.spinnaker.orca.clouddriver.tasks.cluster.AbstractWaitForClusterWideClouddriverTask
-import com.netflix.spinnaker.orca.clouddriver.tasks.servergroup.ServerGroupCacheForceRefreshTask
-import com.netflix.spinnaker.orca.clouddriver.utils.LockNameHelper
-import com.netflix.spinnaker.orca.locks.LockableStageSupport
-import com.netflix.spinnaker.orca.locks.LockingConfigurationProperties
-import com.netflix.spinnaker.orca.pipeline.TaskNode
-import com.netflix.spinnaker.orca.pipeline.model.Stage
-import org.springframework.beans.factory.annotation.Autowired
+import com.netflix.spinnaker.orca.clouddriver.pipeline.servergroup.support.Location;
+import com.netflix.spinnaker.orca.clouddriver.tasks.DetermineHealthProvidersTask;
+import com.netflix.spinnaker.orca.clouddriver.tasks.MonitorKatoTask;
+import com.netflix.spinnaker.orca.clouddriver.tasks.cluster.AbstractClusterWideClouddriverTask;
+import com.netflix.spinnaker.orca.clouddriver.tasks.cluster.AbstractClusterWideClouddriverTask.ClusterSelection;
+import com.netflix.spinnaker.orca.clouddriver.tasks.cluster.AbstractWaitForClusterWideClouddriverTask;
+import com.netflix.spinnaker.orca.clouddriver.tasks.servergroup.ServerGroupCacheForceRefreshTask;
+import com.netflix.spinnaker.orca.clouddriver.utils.LockNameHelper;
+import com.netflix.spinnaker.orca.locks.LockableStageSupport;
+import com.netflix.spinnaker.orca.locks.LockingConfigurationProperties;
+import com.netflix.spinnaker.orca.pipeline.TaskNode;
+import com.netflix.spinnaker.orca.pipeline.model.Stage;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.beans.Introspector
+import java.beans.Introspector;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
 
 abstract class AbstractClusterWideClouddriverOperationStage implements LockableStageSupport {
-  @Autowired LockingConfigurationProperties lockingConfiguration
+  @Autowired LockingConfigurationProperties lockingConfiguration;
 
-  protected abstract Class<? extends AbstractClusterWideClouddriverTask> getClusterOperationTask()
+  protected abstract Class<? extends AbstractClusterWideClouddriverTask> getClusterOperationTask();
 
   protected abstract Class<? extends AbstractWaitForClusterWideClouddriverTask> getWaitForTask();
 
@@ -57,20 +61,40 @@ abstract class AbstractClusterWideClouddriverOperationStage implements LockableS
   }
 
   public List<String> getLockNames(Stage stage) {
-    final ClusterSelection cluster = stage.mapTo(AbstractClusterWideClouddriverTask.ClusterSelection.class)
-    return getLocations(stage).collect { LockNameHelper.buildClusterLockName(cluster.cloudProvider, cluster.credentials, cluster.cluster, it.value) }
+    final ClusterSelection cluster = stage.mapTo(AbstractClusterWideClouddriverTask.ClusterSelection.class);
+    return getLocations(stage)
+      .stream()
+      .map(loc -> LockNameHelper.buildClusterLockName(cluster.getCloudProvider(), cluster.getCredentials(), cluster.getCluster(), loc.getValue()))
+      .collect(Collectors.toList());
   }
 
   static List<Location> getLocations(Stage stage) {
-   List<Location> locations =
-    stage.context.namespaces ? stage.context.namespaces.collect { new Location(type: Location.Type.NAMESPACE, value: it) } :
-     stage.context.regions ? stage.context.regions.collect { new Location(type: Location.Type.REGION, value: it) } :
-       stage.context.zones ? stage.context.zones.collect { new Location(type: Location.Type.ZONE, value: it) } :
-         stage.context.namespace ? [new Location(type: Location.Type.NAMESPACE, value: stage.context.namespace)] :
-           stage.context.region ? [new Location(type: Location.Type.REGION, value: stage.context.region)] :
-             []
+    final Map<String, ?> context = stage.getContext();
+    return
+      getLocations(context, "namespaces", Location.Type.NAMESPACE)
+        .orElseGet(() -> getLocations(context, "regions", Location.Type.REGION)
+          .orElseGet(() -> getLocations(context, "zones", Location.Type.ZONE)
+            .orElseGet(() -> getLocations(context, "namespace", Location.Type.NAMESPACE)
+              .orElseGet(() -> getLocations(context, "region", Location.Type.REGION)
+                .orElseGet(() -> getLocations(context, "zone", Location.Type.ZONE)
+                  .orElse(emptyList()))))));
+  }
 
-    return locations
+
+
+  static Optional<List<Location>> getLocations(Map<String, ?> context, String key, Location.Type type) {
+    if (!context.containsKey(key)) {
+      return Optional.empty();
+    }
+    Object value = context.get("key");
+    if (value instanceof String) {
+      return Optional.of(Collections.singletonList(new Location(type, (String) value)));
+    }
+    if (value instanceof Collection) {
+      return Optional.of(((Collection<String>) value).stream().map(l -> new Location(type, l)).collect(Collectors.toList()));
+    }
+
+    throw new IllegalStateException("unexpected value type " + value.getClass().getSimpleName() + " for location type " + type + ": " + value);
   }
 
   @Override

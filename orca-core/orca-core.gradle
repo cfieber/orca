@@ -35,6 +35,7 @@ dependencies {
   compile spinnaker.dependency('korkExceptions')
   compile spinnaker.dependency('korkArtifacts')
   compile spinnaker.dependency("logstashEncoder")
+  compile spinnaker.dependency("korkJedis")
   compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${spinnaker.version('jackson')}"
   compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${spinnaker.version('jackson')}"
   compile "com.fasterxml.jackson.module:jackson-module-kotlin:${spinnaker.version('jackson')}"
@@ -45,4 +46,5 @@ dependencies {
 
   testCompile project(":orca-test")
   testCompile project(":orca-test-groovy")
+  testCompile spinnaker.dependency("korkJedisTest")
 }
