@@ -29,6 +29,7 @@ import com.netflix.spinnaker.orca.front50.PipelineModelMutator
 import com.netflix.spinnaker.orca.igor.BuildService
 import com.netflix.spinnaker.orca.pipeline.ExecutionLauncher
 import com.netflix.spinnaker.orca.pipeline.model.Execution
+import com.netflix.spinnaker.orca.pipeline.model.JenkinsTrigger
 import com.netflix.spinnaker.orca.pipeline.model.Trigger
 import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionNotFoundException
 import com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository
@@ -269,7 +270,7 @@ class OperationsController {
       def buildInfo = buildService.getBuild(trigger.buildNumber, trigger.master, trigger.job)
       if (buildInfo?.artifacts) {
         if (trigger.type == "manual") {
-          trigger.artifacts = buildInfo.artifacts
+          trigger.artifacts = buildInfo.artifacts.collect { new JenkinsTrigger.JenkinsArtifact(it.fileName, it.displayPath, it.relativePath)}
         }
       }
       trigger.buildInfo = buildInfo

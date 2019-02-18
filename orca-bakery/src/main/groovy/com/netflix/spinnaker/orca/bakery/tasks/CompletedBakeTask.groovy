@@ -25,6 +25,7 @@ import com.netflix.spinnaker.orca.bakery.api.BakeryService
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import groovy.transform.CompileStatic
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Component
@@ -34,16 +35,27 @@ class CompletedBakeTask implements Task {
   @Autowired
   BakeryService bakery
 
+  @Value('${bakery.roscoApisEnabled:false}')
+  boolean roscoApisEnabled
+
   @Override
   TaskResult execute(Stage stage) {
     def region = stage.context.region as String
     def bakeStatus = stage.context.status as BakeStatus
     def bake = bakery.lookupBake(region, bakeStatus.resourceId).toBlocking().first()
     // This treatment of ami allows both the aws and gce bake results to be propagated.
+
+    def artifacts = bake.artifact ? [bake.artifact] : []
+
+    if (!roscoApisEnabled && bake.ami && !bake.artifact) {
+      artifacts = [
+        new Artifact("image", false, bake.amiName, null, region, null, [:], null, null, null)
+      ]
+    }
     def results = [
       ami: bake.ami ?: bake.imageName,
       imageId: bake.ami ?: bake.imageName,
-      artifacts: bake.artifact ? [bake.artifact] : []
+      artifacts: artifacts
     ]
     /**
      * TODO:

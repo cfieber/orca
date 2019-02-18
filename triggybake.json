@@ -1,0 +1,67 @@
+{
+  "application": "cftestapp",
+  "executionEngine": "v3",
+  "keepWaitingPipelines": false,
+  "lastModifiedBy": "anonymous",
+  "limitConcurrent": true,
+  "spelEvaluator": "v2",
+  "expectedArtifacts": [{
+    "id": "the-package-to-bake",
+    "matchArtifact": {
+      "type": "deb",
+      "name": "mimirdemo"
+    }
+  }],
+  "stages": [
+    {
+      "expectedArtifacts": [{
+        "id": "baked-images",
+        "matchArtifact": {
+          "type": "image"
+        }
+      }],
+      "packageArtifactIds": ["the-package-to-bake"],
+      "baseLabel": "release",
+      "baseOs": "xenial",
+      "cloudProviderType": "aws",
+      "extendedAttributes": {},
+      "name": "Bake",
+      "packalackage": "foooofoooo",
+      "refId": "1",
+      "regions": [
+        "eu-west-1",
+        "us-east-1",
+        "us-west-2"
+      ],
+      "requisiteStageRefIds": [],
+      "storeType": "ebs",
+      "type": "bake",
+      "user": "cfieber@netflix.com",
+      "vmType": "hvm"
+    }
+  ],
+  "triggers": [
+    {
+      "enabled": true,
+      "job": "ZZ-WAPP-mimirdemo",
+      "master": "opseng",
+      "type": "jenkins"
+    }
+  ],
+  "updateTs": "1550174812000",
+  "trigger": {
+    "type": "manual",
+    "artifacts": [{
+        "customKind": false,
+        "metadata": {
+          "fileName": "mimirdemo_3.18.0-h207.e06f231_all.deb",
+          "relativePath": "repo/mimirdemo-server/build/distributions/mimirdemo_3.18.0-h207.e06f231_all.deb",
+          "displayPath": "mimirdemo_3.18.0-h207.e06f231_all.deb"
+        },
+        "name": "mimirdemo",
+        "version": "3.18.0-h207.e06f231",
+        "location": "repo/mimirdemo-server/build/distributions/mimirdemo_3.18.0-h207.e06f231_all.deb",
+        "type": "deb"
+    }]
+  }
+}

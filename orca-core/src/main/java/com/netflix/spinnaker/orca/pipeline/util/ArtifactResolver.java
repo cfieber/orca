@@ -175,7 +175,7 @@ public class ArtifactResolver {
       return;
     }
 
-    List<Artifact> priorArtifacts = getArtifactsForPipelineId((String) pipeline.get("id"), new ExecutionCriteria());
+    List<Artifact> priorArtifacts = pipeline.containsKey("pipelineConfigId") ? getArtifactsForPipelineId((String) pipeline.get("pipelineConfigId"), new ExecutionCriteria()) : Collections.emptyList();
     Set<Artifact> resolvedArtifacts = resolveExpectedArtifacts(expectedArtifacts, receivedArtifacts, priorArtifacts, true);
     Set<Artifact> allArtifacts = new HashSet<>(receivedArtifacts);
 

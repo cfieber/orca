@@ -68,7 +68,14 @@ data class JenkinsTrigger
 
   data class JenkinsArtifact
   @JsonCreator constructor(
-    @param:JsonProperty("fileName") val fileName: String,
-    @param:JsonProperty("relativePath") val relativePath: String
-  )
+    @param:JsonProperty("fileName") val fileName: String?,
+    @param:JsonProperty("displayPath") val displayPath: String?,
+    @param:JsonProperty("relativePath") val relativePath: String?
+  ) : Artifact("build", false, fileName, null, relativePath, null, null, null, null, null) {
+    init {
+      if (fileName != null) putMetadata("fileName", fileName)
+      if (relativePath != null) putMetadata("relativePath", relativePath)
+      if (displayPath != null) putMetadata("displayPath", displayPath)
+    }
+  }
 }
